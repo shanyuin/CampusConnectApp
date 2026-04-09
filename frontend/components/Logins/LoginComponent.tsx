@@ -1,4 +1,5 @@
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import HomeComponent from '../Home/HomeComponent';
 
 export default function LoginComponent() {
   return (
