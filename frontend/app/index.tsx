@@ -14,33 +14,13 @@ export default function Home() {
   const [user, setUser] = useState<AuthUser | null>(null);
 
   const apiBaseUrl = useMemo(
-    () => process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:5000',
+    () => process.env.EXPO_PUBLIC_API_URL ?? 'http://192.168.177.250:5000',
     [],
   );
 
-  const handleLoginSuccess = async (nextToken: string, nextUser: AuthUser) => {
-    try {
-      const response = await fetch(`${apiBaseUrl}/api/auth/me`, {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${nextToken}` },
-      });
-
-      const payload = (await response.json()) as
-        | { user: AuthUser }
-        | { error?: string };
-
-      if (!response.ok || !('user' in payload)) {
-        setToken(null);
-        setUser(null);
-        return;
-      }
-
-      setToken(nextToken);
-      setUser(payload.user ?? nextUser);
-    } catch {
-      setToken(null);
-      setUser(null);
-    }
+  const handleLoginSuccess = (nextToken: string, nextUser: AuthUser) => {
+    setToken(nextToken);
+    setUser(nextUser);
   };
 
   if (!token || !user) {

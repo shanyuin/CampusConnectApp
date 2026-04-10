@@ -19,6 +19,7 @@ app.get("/", (_req: Request, res: Response) => {
 app.post("/api/auth/login", async (req: Request, res: Response) => {
   try {
     const payload = req.body as LoginRequest;
+    console.log(payload);
     const loginResponse = await loginWithErpCredentials(payload);
     res.status(200).json(loginResponse);
   } catch (error) {
@@ -44,6 +45,6 @@ app.get("/api/auth/me", authenticateRequest, (req: Request, res: Response) => {
   });
 });
 
-app.listen(5000, () => {
+app.listen(5000, "0.0.0.0", () => {
   console.log("Server running on port 5000");
 });

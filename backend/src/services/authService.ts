@@ -43,7 +43,7 @@ class AuthService {
     const { data, error } = await supabase
       .from("users")
       .select("*")
-      .or(`erpid.eq.${normalizedErpId},erp_id.eq.${normalizedErpId}`)
+      .eq("erpid", normalizedErpId)
       .limit(1)
       .maybeSingle<UserRow>();
 
@@ -56,7 +56,14 @@ class AuthService {
       throw new Error("Password not configured for this user");
     }
 
-    const isMatch = await bcrypt.compare(password, passwordHash);
+    let isMatch = false;
+
+    if (passwordHash.startsWith("$2")) {
+      isMatch = await bcrypt.compare(password, passwordHash);
+    } else {
+      isMatch = password === passwordHash;
+    }
+
     if (!isMatch) {
       throw new Error("Invalid password");
     }
