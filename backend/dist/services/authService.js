@@ -40,7 +40,7 @@ class AuthService {
             const { data, error } = yield supabase_1.supabase
                 .from("users")
                 .select("*")
-                .or(`erpid.eq.${normalizedErpId},erp_id.eq.${normalizedErpId}`)
+                .eq("erpid", normalizedErpId)
                 .limit(1)
                 .maybeSingle();
             if (error || !data) {
@@ -50,7 +50,13 @@ class AuthService {
             if (!passwordHash) {
                 throw new Error("Password not configured for this user");
             }
-            const isMatch = yield bcryptjs_1.default.compare(password, passwordHash);
+            let isMatch = false;
+            if (passwordHash.startsWith("$2")) {
+                isMatch = yield bcryptjs_1.default.compare(password, passwordHash);
+            }
+            else {
+                isMatch = password === passwordHash;
+            }
             if (!isMatch) {
                 throw new Error("Invalid password");
             }

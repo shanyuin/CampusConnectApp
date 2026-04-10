@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const express_1 = __importDefault(require("express"));
+const supabase_1 = require("./services/supabase");
 const authMiddleware_1 = require("./middleware/authMiddleware");
 const authService_1 = require("./services/authService");
 dotenv_1.default.config();
@@ -26,30 +27,44 @@ app.get("/", (_req, res) => {
 });
 app.post("/api/auth/login", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const payload = req.body;
-        const loginResponse = yield (0, authService_1.loginWithErpCredentials)(payload);
-        res.status(200).json(loginResponse);
+        const loginResponse = yield (0, authService_1.loginWithErpCredentials)(req.body);
+        res.json(loginResponse);
     }
     catch (error) {
-        const message = error instanceof Error ? error.message : "Login failed.";
-        const statusCode = message.includes("required") ? 400 : 401;
-        res.status(statusCode).json({ error: message });
+        res.status(401).json({ error: error.message });
     }
 }));
-app.get("/api/auth/me", authMiddleware_1.authenticateRequest, (req, res) => {
-    if (!req.authUser) {
-        res.status(401).json({ error: "Unauthorized." });
-        return;
+app.get("/api/attendance", authMiddleware_1.authenticateRequest, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b, _c, _d;
+    try {
+        const erpIdRaw = String((_b = (_a = req.authUser) === null || _a === void 0 ? void 0 : _a.erpId) !== null && _b !== void 0 ? _b : "").trim();
+        console.log("Attendance lookup ERP ID:", erpIdRaw, "token type:", typeof ((_c = req.authUser) === null || _c === void 0 ? void 0 : _c.erpId));
+        let { data, error } = yield supabase_1.supabase
+            .from("attendance_logs")
+            .select("*")
+            .eq("erpid", erpIdRaw)
+            .order("date", { ascending: false });
+        if (!error && (!data || data.length === 0) && /^\d+$/.test(erpIdRaw)) {
+            const erpIdAsNumber = Number(erpIdRaw);
+            const fallback = yield supabase_1.supabase
+                .from("attendance_logs")
+                .select("*")
+                .eq("erpid", erpIdAsNumber)
+                .order("date", { ascending: false });
+            data = fallback.data;
+            error = fallback.error;
+        }
+        console.log("Attendance rows:", (_d = data === null || data === void 0 ? void 0 : data.length) !== null && _d !== void 0 ? _d : 0);
+        if (error) {
+            return res.status(500).json({ error: error.message });
+        }
+        return res.json({ attendance: data });
     }
-    res.status(200).json({
-        user: {
-            id: req.authUser.sub,
-            erpId: req.authUser.erpId,
-            name: req.authUser.name,
-            role: req.authUser.role,
-        },
-    });
-});
-app.listen(5000, () => {
+    catch (err) {
+        console.log("ERROR:", err);
+        return res.status(500).json({ error: "Server error" });
+    }
+}));
+app.listen(5000, "0.0.0.0", () => {
     console.log("Server running on port 5000");
 });

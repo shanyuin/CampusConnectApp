@@ -35,6 +35,8 @@ export default function Home() {
   return (
     <HomeComponent
       user={user}
+      token={token!}
+      apiBaseUrl={apiBaseUrl}
       onLogout={() => {
         setToken(null);
         setUser(null);
