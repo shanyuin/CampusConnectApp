@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
 type Row = {
 	name: string;
@@ -14,8 +14,24 @@ const rows: Row[] = [
 	
 ];
 
-export default function HomeComponent() {
-	const today = rows[0];
+type AuthUser = {
+	id: string;
+	erpId: string;
+	name: string;
+	role: string | null;
+};
+
+type HomeComponentProps = {
+	user?: AuthUser;
+	onLogout?: () => void;
+};
+
+export default function HomeComponent({ user, onLogout }: HomeComponentProps) {
+	const today = {
+		...rows[0],
+		name: user?.name ?? rows[0].name,
+		erpId: user?.erpId ?? rows[0].erpId,
+	};
 
 	return (
 		<View style={styles.screen}>
@@ -23,6 +39,11 @@ export default function HomeComponent() {
 				<Text style={styles.welcomeText}>Welcome back 👋</Text>
 				<Text style={styles.title}>Home Dashboard</Text>
 				<Text style={styles.subtitle}>Track your daily campus attendance in one place.</Text>
+				{onLogout ? (
+					<TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
+						<Text style={styles.logoutText}>Logout</Text>
+					</TouchableOpacity>
+				) : null}
 
 				<View style={styles.statsRow}>
 					<View style={styles.statChip}>
@@ -102,6 +123,20 @@ const styles = StyleSheet.create({
 		color: '#e0ecff',
 		marginTop: 6,
 		lineHeight: 20,
+	},
+	logoutButton: {
+		marginTop: 12,
+		alignSelf: 'flex-start',
+		paddingVertical: 6,
+		paddingHorizontal: 12,
+		borderRadius: 999,
+		borderWidth: 1,
+		borderColor: '#bfdbfe',
+	},
+	logoutText: {
+		color: '#eff6ff',
+		fontWeight: '700',
+		fontSize: 12,
 	},
 	statsRow: {
 		marginTop: 14,

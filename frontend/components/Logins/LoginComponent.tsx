@@ -1,24 +1,79 @@
+import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import HomeComponent from '../Home/HomeComponent';
 
-export default function LoginComponent() {
+type AuthUser = {
+  id: string;
+  erpId: string;
+  name: string;
+  role: string | null;
+};
+
+type LoginComponentProps = {
+  apiBaseUrl: string;
+  onLoginSuccess: (token: string, user: AuthUser) => void;
+};
+
+export default function LoginComponent({ apiBaseUrl, onLoginSuccess }: LoginComponentProps) {
+  const [erpId, setErpId] = useState('');
+  const [password, setPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleLogin = async () => {
+    setErrorMessage(null);
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          erpId: erpId.trim(),
+          password,
+        }),
+      });
+
+      const payload = (await response.json()) as
+        | { token: string; user: AuthUser }
+        | { error?: string };
+
+      if (!response.ok || !('token' in payload) || !('user' in payload)) {
+        setErrorMessage(payload.error ?? 'Login failed. Please check your ERP ID and password.');
+        return;
+      }
+
+      onLoginSuccess(payload.token, payload.user);
+    } catch {
+      setErrorMessage('Cannot reach server. Make sure backend is running.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Campus Connect</Text>
 
       <TextInput
         placeholder="Enter ERP ID"
+        value={erpId}
+        onChangeText={setErpId}
+        autoCapitalize="characters"
         style={styles.input}
       />
 
       <TextInput
         placeholder="Enter Password"
+        value={password}
+        onChangeText={setPassword}
         secureTextEntry
         style={styles.input}
       />
 
-      <TouchableOpacity style={styles.button}>
-        <Text style={styles.buttonText}>Login</Text>
+      {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+
+      <TouchableOpacity style={[styles.button, isLoading && styles.buttonDisabled]} onPress={handleLogin} disabled={isLoading}>
+        <Text style={styles.buttonText}>{isLoading ? 'Logging in...' : 'Login'}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -53,8 +108,17 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
   },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
   buttonText: {
     color: '#fff',
     fontWeight: 'bold',
+  },
+  errorText: {
+    width: '100%',
+    color: '#fca5a5',
+    marginBottom: 10,
+    fontWeight: '600',
   },
 });
