@@ -10,9 +10,10 @@ import {
 export default function RootLayout() {
 
   useEffect(() => {
-    async function initNotifications() {
+    let unsubscribe: (() => void) | undefined;
 
-      console.log("APp started");
+    async function initNotifications() {
+      console.log("App started");
 
       const granted = await requestNotificationPermission();
 
@@ -20,16 +21,24 @@ export default function RootLayout() {
         const token = await getFCMToken();
         console.log("Device Token:", token);
 
-        // 🔥 TODO: send this token to your backend
+        // 🔥 TODO: send this token to backend (VERY IMPORTANT)
       }
-    }
 
-    const unsubscribe = setupForegroundListener();
+      // 🔥 Setup foreground listener AFTER permission
+      unsubscribe = setupForegroundListener();
+    }
 
     initNotifications();
 
-    return unsubscribe;
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, []);
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      {/* 🔥 Main app navigation */}
+      <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
+    </Stack>
+  );
 }

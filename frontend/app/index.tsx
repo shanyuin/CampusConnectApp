@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import HomeComponent from '../components/Home/HomeComponent';
@@ -11,14 +12,16 @@ type AuthUser = {
   role: string | null;
 };
 
-export default function Home() {
+export default function Login() {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const router = useRouter();
+
   const apiBaseUrl = useMemo(
-    () => process.env.EXPO_PUBLIC_API_URL ?? 'http://192.168.177.250:5000',
-    [],
+    () => process.env.EXPO_PUBLIC_API_URL ?? 'http://10.0.2.2:5000',
+    []
   );
 
   // 🔥 Load saved login on app start
@@ -31,6 +34,9 @@ export default function Home() {
         if (savedToken && savedUser) {
           setToken(savedToken);
           setUser(JSON.parse(savedUser));
+
+          // 🔥 Auto redirect if already logged in
+          router.replace('/(tabs)/home' as any);
         }
       } catch (error) {
         console.log('Error loading auth:', error);
@@ -45,7 +51,7 @@ export default function Home() {
   // 🔐 Login success handler
   const handleLoginSuccess = async (
     nextToken: string,
-    nextUser: AuthUser,
+    nextUser: AuthUser
   ) => {
     try {
       await AsyncStorage.setItem('token', nextToken);
@@ -53,6 +59,9 @@ export default function Home() {
 
       setToken(nextToken);
       setUser(nextUser);
+
+      // 🔥 Navigate after login
+      router.replace('/(tabs)/home' as any);
     } catch (error) {
       console.log('Login save error:', error);
     }
@@ -66,6 +75,8 @@ export default function Home() {
 
       setToken(null);
       setUser(null);
+
+      router.replace('/');
     } catch (error) {
       console.log('Logout error:', error);
     }
@@ -73,10 +84,10 @@ export default function Home() {
 
   // ⏳ Prevent blank screen during startup
   if (loading) {
-    return null; // or Splash screen
+    return null; // You can replace with Splash Screen
   }
 
-  // 🔥 Auth routing logic (VERY IMPORTANT)
+  // 🔐 If NOT logged in → show Login
   if (!token || !user) {
     return (
       <LoginComponent
@@ -86,6 +97,7 @@ export default function Home() {
     );
   }
 
+  // ✅ If logged in → show Home
   return (
     <HomeComponent
       user={user}

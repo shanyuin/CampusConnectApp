@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type AuthUser = {
   id: string;
@@ -19,11 +20,14 @@ export default function LoginComponent({ apiBaseUrl, onLoginSuccess }: LoginComp
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  
   const handleLogin = async () => {
     setErrorMessage(null);
     setIsLoading(true);
 
     try {
+      
+
       const response = await fetch(`${apiBaseUrl}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -38,11 +42,16 @@ export default function LoginComponent({ apiBaseUrl, onLoginSuccess }: LoginComp
         | { error?: string };
 
       if (!response.ok || !('token' in payload) || !('user' in payload)) {
-        setErrorMessage(payload.error ?? 'Login failed. Please check your ERP ID and password.');
+        const loginError = 'error' in payload ? payload.error : undefined;
+        setErrorMessage(loginError ?? 'Login failed. Please check your ERP ID and password.');
         return;
       }
 
-      onLoginSuccess(payload.token, payload.user);
+      await AsyncStorage.setItem('authToken', payload.token);
+      await AsyncStorage.setItem('authUser', JSON.stringify(payload.user));
+      onLoginSuccess(payload.token, payload.user);        
+
+      
     } catch {
       setErrorMessage('Cannot reach server. Make sure backend is running.');
     } finally {
@@ -72,7 +81,8 @@ export default function LoginComponent({ apiBaseUrl, onLoginSuccess }: LoginComp
 
       {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
 
-      <TouchableOpacity style={[styles.button, isLoading && styles.buttonDisabled]} onPress={handleLogin} disabled={isLoading}>
+      <TouchableOpacity style={[styles.button, isLoading && styles.buttonDisabled]} onPress={handleLogin} disabled={isLoading}
+      >
         <Text style={styles.buttonText}>{isLoading ? 'Logging in...' : 'Login'}</Text>
       </TouchableOpacity>
     </View>
