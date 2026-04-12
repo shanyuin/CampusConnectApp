@@ -15,9 +15,11 @@ type Row = {
 
 const rows: Row[] = [
     {  erpId: 'ERP001', Shift: "9:00 AM to 6:00 PM", LoginTime: 10.00, LogoutTime: 18.00, Day: 'Monday', Date: '2023-10-01', TotalHours: 8 },
-    {  erpId: 'ERP002', Shift: "2:00 PM to 10:00 PM", LoginTime: 14.00, LogoutTime: 22.00, Day: 'Tuesday', Date: '2023-10-02', TotalHours: 8 },
-    {  erpId: 'ERP003', Shift: "9:00 AM to 6:00 PM", LoginTime: 10.00, LogoutTime: 18.00, Day: 'Wednesday', Date: '2023-10-03', TotalHours: 8 },
-    {  erpId: 'ERP004', Shift: "2:00 PM to 12:00 PM", LoginTime: 14.00, LogoutTime: 12.00, Day: 'Thursday', Date: '2023-10-05', TotalHours: 2 },
+    {  erpId: 'ERP001', Shift: "2:00 PM to 10:00 PM", LoginTime: 14.00, LogoutTime: 22.00, Day: 'Tuesday', Date: '2023-10-02', TotalHours: 8 },
+    {  erpId: 'ERP001', Shift: "9:00 AM to 6:00 PM", LoginTime: 10.00, LogoutTime: 18.00, Day: 'Wednesday', Date: '2023-10-03', TotalHours: 8 },
+
+    
+
 ];
 
 const formatDate = (date: Date) => {
@@ -36,8 +38,7 @@ export default function PreviousAttendance() {
     const [datePickerValue, setDatePickerValue] = useState(new Date(`${rows[0].Date}T00:00:00`));
     const tableRef = useRef<ScrollView>(null);
     const filterRef = useRef<ScrollView>(null);
-
-    const dayOptions = useMemo(() => ['All', ...new Set(rows.map((row) => row.Day))], []);
+    const dayOptions = useMemo(() => ['All', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'], []);
 
     const filteredRows = useMemo(
         () =>
