@@ -87,27 +87,25 @@ app.post("/api/send-notification", async (req, res) => {
   res.json({ success: true });
 });
 
-app.get("/api/attendance", authenticateRequest, async (req: any, res) => {
+app.post("/api/send-notification", async (req, res) => {
   try {
-    const erpIdRaw = String(req.authUser?.erpId ?? "").trim();
-    console.log("Attendance lookup ERP ID:", erpIdRaw, "token type:", typeof req.authUser?.erpId);
+    console.log("🔥 RAW BODY:", req.body);
 
-    let { data, error } = await supabase
-      .from("attendance_logs")
-      .select("*")
-      .eq("erpid", erpIdRaw)
-      .order("date", { ascending: false });
+    const { erpid } = req.body;
 
-      console.log(data);
-
-    if (error) {
-      return res.status(500).json({ error: error.message });
+    if (!erpid) {
+      console.log("❌ ERPID missing");
+      return res.status(400).json({ error: "erpid is required" });
     }
 
-    return res.json({ attendance: data });
-  } catch (err) {
-    console.log("ERROR:", err);
-    return res.status(500).json({ error: "Server error" });
+    console.log("✅ ERPID:", erpid);
+
+    await sendNotification(erpid);
+
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error("❌ ERROR:", error);
+    res.status(500).json({ error: error.message });
   }
 });
 
