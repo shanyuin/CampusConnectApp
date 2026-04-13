@@ -20,7 +20,7 @@ export default function Login() {
 
   const router = useRouter();
 
-  const apiBaseUrl = 'http://192.168.177.250:5000';
+  const apiBaseUrl = 'https://campusconnectapp-lu1d.onrender.com';
 
   // 🔥 Load saved login on app start
   useEffect(() => {

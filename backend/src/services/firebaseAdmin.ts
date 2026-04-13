@@ -1,96 +1,125 @@
 import * as admin from 'firebase-admin';
 import { supabase } from './supabase';
 
-// ✅ Validate env
-if (
-    !process.env.FIREBASE_PROJECT_ID ||
-    !process.env.FIREBASE_PRIVATE_KEY ||
-    !process.env.FIREBASE_CLIENT_EMAIL
-) {
-    throw new Error("Missing Firebase environment variables");
-}
+const {
+    FIREBASE_PROJECT_ID,
+    FIREBASE_PRIVATE_KEY,
+    FIREBASE_CLIENT_EMAIL,
+} = process.env;
 
-const serviceAccount = {
-    type: "service_account",
-    project_id: process.env.FIREBASE_PROJECT_ID,
-    private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    client_email: process.env.FIREBASE_CLIENT_EMAIL,
-};
+if (!FIREBASE_PROJECT_ID || !FIREBASE_PRIVATE_KEY || !FIREBASE_CLIENT_EMAIL) {
+    throw new Error('Missing Firebase environment variables');
+}
 
 if (!admin.apps.length) {
     admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
+        credential: admin.credential.cert({
+            project_id: FIREBASE_PROJECT_ID,
+            client_email: FIREBASE_CLIENT_EMAIL,
+            private_key: FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+        } as admin.ServiceAccount),
     });
 }
 
 export const messaging = admin.messaging();
 
-export async function sendNotification(erpid: string) {
+const MAX_TOKENS_PER_REQUEST = 500;
+const PERMANENT_INVALID_CODES = new Set([
+    'messaging/registration-token-not-registered',
+    'messaging/invalid-registration-token',
+]);
+
+function chunk<T>(arr: T[], size: number): T[][] {
+    const out: T[][] = [];
+    for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+    return out;
+}
+
+export async function sendNotification(erpid: string | number) {
+    const erpidStr = String(erpid).trim();
+    if (!erpidStr) {
+        console.warn('sendNotification called without erpid');
+        return { successCount: 0, failureCount: 0, deletedCount: 0 };
+    }
+
     try {
-        const { data: tokens, error } = await supabase
+        const { data, error } = await supabase
             .from('fcm_tokens')
             .select('token')
-            .eq('erpid', erpid);
+            .eq('erpid', erpidStr);
 
         if (error) {
             console.error('Error fetching tokens:', error);
-            return;
+            return { successCount: 0, failureCount: 0, deletedCount: 0 };
         }
 
-        if (!tokens || tokens.length === 0) {
-            console.log(`No tokens found for erpid: ${erpid}`);
-            return;
+        const tokens = [...new Set((data ?? []).map((r) => r.token).filter(Boolean))];
+
+        if (tokens.length === 0) {
+            console.log(`No tokens found for erpid: ${erpidStr}`);
+            return { successCount: 0, failureCount: 0, deletedCount: 0 };
         }
 
-        const registrationTokens = tokens.map(t => t.token);
+        let successCount = 0;
+        let failureCount = 0;
+        const invalidTokensToDelete = new Set<string>();
 
-        const message = {
-            notification: {
-                title: 'Attendance Marked',
-                body: 'Your login has been recorded',
-            },
-            data: {
-                type: 'attendance',
-                erpid: erpid,
-            },
-            tokens: registrationTokens,
-            android: {
-                priority: 'high' as const
-            },
-        };
+        for (const tokenBatch of chunk(tokens, MAX_TOKENS_PER_REQUEST)) {
+            const message: admin.messaging.MulticastMessage = {
+                tokens: tokenBatch,
+                notification: {
+                    title: 'Attendance Marked',
+                    body: 'Your login has been recorded',
+                },
+                data: {
+                    type: 'attendance',
+                    erpid: erpidStr, // must be string
+                },
+                android: { priority: 'high' },
+            };
 
-        const response = await messaging.sendEachForMulticast(message);
+            const resp = await messaging.sendEachForMulticast(message);
+            successCount += resp.successCount;
+            failureCount += resp.failureCount;
 
-        console.log('Notification sent:', response);
+            resp.responses.forEach((r, idx) => {
+                if (r.success) return;
+                const code = r.error?.code;
+                const token = tokenBatch[idx];
+                console.log('FCM send error:', code, 'token:', token);
 
-        // 🔥 Remove invalid tokens
-        response.responses.forEach(async (resp, idx) => {
-            if (!resp.success) {
-                const token = registrationTokens[idx];
-                const errorCode = resp.error?.code;
-
-                console.log("❌ Firebase error:", errorCode);
-
-                // ✅ Delete ONLY if token is permanently invalid
-                if (
-                    errorCode === 'messaging/registration-token-not-registered' ||
-                    errorCode === 'messaging/invalid-registration-token'
-                ) {
-                    console.log("🗑️ ting invalid token:", token);
-
-                    // await supabase
-                    //     .from('fcm_tokens')
-                    //     .delete()
-                    //     .eq('token', token);
-                } else {
-                    console.log("⚠️ Temporary error, NOT deleting token");
+                if (code && PERMANENT_INVALID_CODES.has(code)) {
+                    invalidTokensToDelete.add(token);
                 }
+            });
+        }
+
+        let deletedCount = 0;
+        if (invalidTokensToDelete.size > 0) {
+            const dead = [...invalidTokensToDelete];
+            const { error: deleteError, count } = await supabase
+                .from('fcm_tokens')
+                .delete({ count: 'exact' })
+                .in('token', dead);
+
+            if (deleteError) {
+                console.error('Failed to delete invalid tokens:', deleteError);
+            } else {
+                deletedCount = count ?? 0;
             }
+        }
+
+        console.log('Notification summary:', {
+            erpid: erpidStr,
+            totalTokens: tokens.length,
+            successCount,
+            failureCount,
+            deletedCount,
         });
 
-        return response;
-
-    } catch (error) {
-        console.error('Error sending notification:', error);
+        return { successCount, failureCount, deletedCount };
+    } catch (err) {
+        console.error('Error sending notification:', err);
+        return { successCount: 0, failureCount: 0, deletedCount: 0 };
     }
 }

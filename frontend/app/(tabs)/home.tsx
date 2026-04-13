@@ -19,7 +19,7 @@ export default function HomeTab() {
   const [hasRedirected, setHasRedirected] = useState(false); // ✅ NEW
 
   const apiBaseUrl = useMemo(
-    () => process.env.EXPO_PUBLIC_API_URL ?? 'http://192.168.177.250:5000',
+    () => process.env.EXPO_PUBLIC_API_URL ?? 'https://campusconnectapp-lu1d.onrender.com',
     []
   );
 
