@@ -62,47 +62,38 @@ app.post("/api/auth/store-fcm-token", authMiddleware_1.authenticateRequest, (req
 }));
 app.post("/api/send-notification", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
+        console.log("🔥 RAW BODY:", req.body);
         const { erpid } = req.body;
         if (!erpid) {
+            console.log("❌ ERPID missing");
             return res.status(400).json({ error: "erpid is required" });
         }
+        console.log("✅ ERPID:", erpid);
         yield (0, firebaseAdmin_1.sendNotification)(erpid);
         res.json({ success: true });
     }
     catch (error) {
+        console.error("❌ ERROR:", error);
         res.status(500).json({ error: error.message });
     }
 }));
 app.get("/api/attendance", authMiddleware_1.authenticateRequest, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c;
+    var _a;
     try {
-        const erpIdRaw = String((_b = (_a = req.authUser) === null || _a === void 0 ? void 0 : _a.erpId) !== null && _b !== void 0 ? _b : "").trim();
-        console.log("Attendance lookup ERP ID:", erpIdRaw, "token type:", typeof ((_c = req.authUser) === null || _c === void 0 ? void 0 : _c.erpId));
-        let { data, error } = yield supabase_1.supabase
+        const erpId = (_a = req.authUser) === null || _a === void 0 ? void 0 : _a.erpId;
+        const { data, error } = yield supabase_1.supabase
             .from("attendance_logs")
             .select("*")
-            .eq("erpid", erpIdRaw)
-            .order("date", { ascending: false });
-        console.log(data);
-        // if (!error && (!data || data.length === 0) && /^\d+$/.test(erpIdRaw)) {
-        //   const erpIdAsNumber = Number(erpIdRaw);
-        //   const fallback = await supabase
-        //     .from("attendance_logs")
-        //     .select("*")
-        //     .eq("erpid", erpIdAsNumber)
-        //     .order("date", { ascending: false });
-        //   data = fallback.data;
-        //   error = fallback.error;
-        // }
-        // console.log("Attendance rows:", data?.length ?? 0);
+            .eq("erpid", erpId)
+            .order("date", { ascending: false })
+            .limit(1);
         if (error) {
             return res.status(500).json({ error: error.message });
         }
-        return res.json({ attendance: data });
+        res.json({ attendance: data });
     }
     catch (err) {
-        console.log("ERROR:", err);
-        return res.status(500).json({ error: "Server error" });
+        res.status(500).json({ error: "Server error" });
     }
 }));
 app.post("/api/attendance", authMiddleware_1.authenticateRequest, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -127,7 +118,12 @@ app.post("/api/attendance", authMiddleware_1.authenticateRequest, (req, res) => 
         res.status(500).json({ error: "Server error" });
     }
 }));
+app.get("/test", (req, res) => {
+    console.log("🔥 TEST HIT");
+    res.send("ok");
+});
 app.use("/api", notificationRoutes_1.default);
-app.listen(5000, "0.0.0.0", () => {
-    console.log("Server running on port 5000");
+const PORT = Number(process.env.PORT) || 5000;
+app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on port ${PORT}`);
 });

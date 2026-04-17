@@ -21,7 +21,7 @@ const saveToken = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         // Upsert the token
         const { error } = yield supabase_1.supabase
             .from('fcm_tokens')
-            .upsert({ erpid, token }, { onConflict: 'token' } // Assuming token is unique
+            .upsert({ erpid, token }, { onConflict: 'erpid' } // Assuming token is unique
         );
         if (error) {
             console.error('Error saving token:', error);

@@ -9,10 +9,15 @@ import {
 } from '../services/notificationService';
 
 
-// 🔥🔥 VERY IMPORTANT (OUTSIDE COMPONENT)
-messaging().setBackgroundMessageHandler(async remoteMessage => {
-  console.log('Background Message:', remoteMessage);
-});
+// Register background handler defensively so app won't crash when Firebase
+// is not configured in a build variant.
+try {
+  messaging().setBackgroundMessageHandler(async remoteMessage => {
+    console.log('Background Message:', remoteMessage);
+  });
+} catch (error) {
+  console.warn('Background handler not registered:', error);
+}
 
 
 export default function RootLayout() {

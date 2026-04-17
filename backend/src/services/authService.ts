@@ -40,16 +40,31 @@ class AuthService {
   static async login(erpid: string, password: string): Promise<User> {
     const normalizedErpId = normalizeErpId(erpid);
 
-    const { data, error } = await supabase
+    const { data: rowsByErpid, error: erpidError } = await supabase
       .from("users")
       .select("*")
-      .eq("erpid", normalizedErpId)
-      .limit(1)
-      .maybeSingle<UserRow>();
+      .ilike("erpid", normalizedErpId)
+      .limit(25);
 
-    if (error || !data) {
+    const { data: rowsByLegacy, error: legacyError } = await supabase
+      .from("users")
+      .select("*")
+      .ilike("erp_id", normalizedErpId)
+      .limit(25);
+
+    if (erpidError && legacyError) {
       throw new Error("User not found");
     }
+
+    const rows = [...(rowsByErpid ?? []), ...(rowsByLegacy ?? [])];
+
+    if (rows.length === 0) {
+      throw new Error("User not found");
+    }
+
+    const data =
+      rows.find((row) => normalizeErpId(resolveErpId(row)) === normalizedErpId) ??
+      rows[0];
 
     const passwordHash = resolvePasswordHash(data);
     if (!passwordHash) {
