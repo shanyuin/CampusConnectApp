@@ -32,13 +32,13 @@ export const saveToken = async (req: Request, res: Response) => {
 
 export const triggerNotification = async (req: Request, res: Response) => {
   try {
-    const { erpid } = req.body;
+    const { erpid, type } = req.body;
 
     if (!erpid) {
       return res.status(400).json({ error: 'erpid is required' });
     }
 
-    await sendNotification(erpid);
+    await sendNotification(erpid, type);
     res.json({ success: true, message: 'Notification sent' });
   } catch (error) {
     console.error('Error in triggerNotification:', error);

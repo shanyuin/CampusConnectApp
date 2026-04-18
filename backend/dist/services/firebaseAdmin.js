@@ -71,9 +71,26 @@ function chunk(arr, size) {
         out.push(arr.slice(i, i + size));
     return out;
 }
-function sendNotification(erpid) {
-    return __awaiter(this, void 0, void 0, function* () {
+function normalizeEventType(value) {
+    return value === 'logout' ? 'logout' : 'login';
+}
+function buildNotificationContent(eventType) {
+    if (eventType === 'logout') {
+        return {
+            title: 'Attendance Updated',
+            body: 'Your logout has been recorded',
+        };
+    }
+    return {
+        title: 'Attendance Marked',
+        body: 'Your login has been recorded',
+    };
+}
+function sendNotification(erpid_1) {
+    return __awaiter(this, arguments, void 0, function* (erpid, eventTypeInput = 'login') {
         const erpidStr = String(erpid).trim();
+        const eventType = normalizeEventType(eventTypeInput);
+        const notificationContent = buildNotificationContent(eventType);
         if (!erpidStr) {
             console.warn('sendNotification called without erpid');
             return { successCount: 0, failureCount: 0, deletedCount: 0 };
@@ -99,11 +116,12 @@ function sendNotification(erpid) {
                 const message = {
                     tokens: tokenBatch,
                     notification: {
-                        title: 'Attendance Marked',
-                        body: 'Your login has been recorded',
+                        title: notificationContent.title,
+                        body: notificationContent.body,
                     },
                     data: {
                         type: 'attendance',
+                        attendanceType: eventType,
                         erpid: erpidStr, // must be string
                     },
                     android: { priority: 'high' },
@@ -139,6 +157,7 @@ function sendNotification(erpid) {
             }
             console.log('Notification summary:', {
                 erpid: erpidStr,
+                eventType,
                 totalTokens: tokens.length,
                 successCount,
                 failureCount,

@@ -63,7 +63,7 @@ app.post("/api/send-notification", async (req, res) => {
   try {
     console.log("🔥 RAW BODY:", req.body);
 
-    const { erpid } = req.body;
+    const { erpid, type } = req.body;
 
     if (!erpid) {
       console.log("❌ ERPID missing");
@@ -72,7 +72,7 @@ app.post("/api/send-notification", async (req, res) => {
 
     console.log("✅ ERPID:", erpid);
 
-    await sendNotification(erpid);
+    await sendNotification(erpid, type);
 
     res.json({ success: true });
   } catch (error: any) {
@@ -122,7 +122,7 @@ app.post("/api/attendance", authenticateRequest, async (req: any, res) => {
     }
 
     // Trigger notification
-    await sendNotification(erpId);
+    await sendNotification(erpId, "login");
 
     res.json({ success: true, data });
   } catch (err) {
