@@ -35,17 +35,26 @@ class AuthService {
     // LOGIN WITH ERPID + PASSWORD
     static login(erpid, password) {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a;
+            var _a, _b;
             const normalizedErpId = normalizeErpId(erpid);
-            const { data, error } = yield supabase_1.supabase
+            const { data: rowsByErpid, error: erpidError } = yield supabase_1.supabase
                 .from("users")
                 .select("*")
-                .eq("erpid", normalizedErpId)
-                .limit(1)
-                .maybeSingle();
-            if (error || !data) {
+                .ilike("erpid", normalizedErpId)
+                .limit(25);
+            const { data: rowsByLegacy, error: legacyError } = yield supabase_1.supabase
+                .from("users")
+                .select("*")
+                .ilike("erp_id", normalizedErpId)
+                .limit(25);
+            if (erpidError && legacyError) {
                 throw new Error("User not found");
             }
+            const rows = [...(rowsByErpid !== null && rowsByErpid !== void 0 ? rowsByErpid : []), ...(rowsByLegacy !== null && rowsByLegacy !== void 0 ? rowsByLegacy : [])];
+            if (rows.length === 0) {
+                throw new Error("User not found");
+            }
+            const data = (_a = rows.find((row) => normalizeErpId(resolveErpId(row)) === normalizedErpId)) !== null && _a !== void 0 ? _a : rows[0];
             const passwordHash = resolvePasswordHash(data);
             if (!passwordHash) {
                 throw new Error("Password not configured for this user");
@@ -63,7 +72,7 @@ class AuthService {
             return {
                 erpid: resolveErpId(data),
                 name: data.name,
-                dept: (_a = data.dept) !== null && _a !== void 0 ? _a : "",
+                dept: (_b = data.dept) !== null && _b !== void 0 ? _b : "",
             };
         });
     }
