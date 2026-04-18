@@ -84,12 +84,16 @@ app.post("/api/send-notification", async (req, res) => {
 app.get("/api/attendance", authenticateRequest, async (req: any, res) => {
   try {
     const erpId = req.authUser?.erpId;
+    const todayIst = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Kolkata",
+    }).format(new Date());
 
     const { data, error } = await supabase
       .from("attendance_logs")
       .select("*")
       .eq("erpid", erpId)
-      .order("date", { ascending: false })
+      .eq("date", todayIst)
+      .or("login_time.not.is.null,logout_time.not.is.null")
       .limit(1);
 
     if (error) {

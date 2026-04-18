@@ -1,9 +1,41 @@
 import messaging from '@react-native-firebase/messaging';
-import { Alert } from 'react-native';
+import { Alert, PermissionsAndroid, Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const NOTIFICATION_PERMISSION_ASKED_KEY = 'notification_permission_asked';
+
+async function isAndroidNotificationPermissionGranted() {
+  if (Platform.OS !== 'android') return false;
+  if (Platform.Version < 33) return true;
+  return PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
+}
 
 export async function requestNotificationPermission() {
   try {
+    if (Platform.OS === 'android') {
+      const alreadyGranted = await isAndroidNotificationPermissionGranted();
+      if (alreadyGranted) {
+        return true;
+      }
+
+      const alreadyAsked = await AsyncStorage.getItem(NOTIFICATION_PERMISSION_ASKED_KEY);
+      if (alreadyAsked) {
+        return false;
+      }
+
+      if (Platform.Version >= 33) {
+        const result = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
+        );
+        await AsyncStorage.setItem(NOTIFICATION_PERMISSION_ASKED_KEY, 'true');
+        return result === PermissionsAndroid.RESULTS.GRANTED;
+      }
+
+      return true;
+    }
+
     const authStatus = await messaging().requestPermission();
+    await AsyncStorage.setItem(NOTIFICATION_PERMISSION_ASKED_KEY, 'true');
 
     const enabled =
       authStatus === messaging.AuthorizationStatus.AUTHORIZED ||

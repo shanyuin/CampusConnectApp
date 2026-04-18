@@ -1,10 +1,9 @@
-import { useEffect, useState , useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import HomeComponent from '../components/Home/HomeComponent';
 import LoginComponent from '../components/Logins/LoginComponent';
-
 import { requestNotificationPermission, setupForegroundListener , setupBackgroundHandler } from '../services/notificationService';
 
 type AuthUser = {

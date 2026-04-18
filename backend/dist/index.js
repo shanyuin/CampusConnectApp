@@ -81,11 +81,15 @@ app.get("/api/attendance", authMiddleware_1.authenticateRequest, (req, res) => _
     var _a;
     try {
         const erpId = (_a = req.authUser) === null || _a === void 0 ? void 0 : _a.erpId;
+        const todayIst = new Intl.DateTimeFormat("en-CA", {
+            timeZone: "Asia/Kolkata",
+        }).format(new Date());
         const { data, error } = yield supabase_1.supabase
             .from("attendance_logs")
             .select("*")
             .eq("erpid", erpId)
-            .order("date", { ascending: false })
+            .eq("date", todayIst)
+            .or("login_time.not.is.null,logout_time.not.is.null")
             .limit(1);
         if (error) {
             return res.status(500).json({ error: error.message });
