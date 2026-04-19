@@ -1,7 +1,12 @@
 package com.campusconnect.app
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.Application
 import android.content.res.Configuration
+import android.media.AudioAttributes
+import android.net.Uri
+import android.os.Build
 
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
@@ -17,6 +22,31 @@ import expo.modules.ApplicationLifecycleDispatcher
 import expo.modules.ReactNativeHostWrapper
 
 class MainApplication : Application(), ReactApplication {
+  private fun ensureAttendanceNotificationChannel() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+
+    val channelId = "attendance_alerts"
+    val channelName = "Attendance Alerts"
+    val manager = getSystemService(NotificationManager::class.java) ?: return
+
+    val soundUri: Uri = Uri.parse("android.resource://$packageName/raw/attendance_tone")
+    val audioAttributes = AudioAttributes.Builder()
+      .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+      .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+      .build()
+
+    val channel = NotificationChannel(
+      channelId,
+      channelName,
+      NotificationManager.IMPORTANCE_HIGH
+    ).apply {
+      description = "Attendance login/logout notifications"
+      setSound(soundUri, audioAttributes)
+      enableVibration(true)
+    }
+
+    manager.createNotificationChannel(channel)
+  }
 
   override val reactNativeHost: ReactNativeHost = ReactNativeHostWrapper(
       this,
@@ -46,6 +76,7 @@ class MainApplication : Application(), ReactApplication {
       ReleaseLevel.STABLE
     }
     loadReactNative(this)
+    ensureAttendanceNotificationChannel()
     ApplicationLifecycleDispatcher.onApplicationCreate(this)
   }
 

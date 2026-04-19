@@ -37,11 +37,11 @@ const saveToken = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 exports.saveToken = saveToken;
 const triggerNotification = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { erpid } = req.body;
+        const { erpid, type } = req.body;
         if (!erpid) {
             return res.status(400).json({ error: 'erpid is required' });
         }
-        yield (0, firebaseAdmin_1.sendNotification)(erpid);
+        yield (0, firebaseAdmin_1.sendNotification)(erpid, type);
         res.json({ success: true, message: 'Notification sent' });
     }
     catch (error) {

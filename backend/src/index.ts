@@ -63,7 +63,7 @@ app.post("/api/send-notification", async (req, res) => {
   try {
     console.log("🔥 RAW BODY:", req.body);
 
-    const { erpid } = req.body;
+    const { erpid, type } = req.body;
 
     if (!erpid) {
       console.log("❌ ERPID missing");
@@ -72,7 +72,7 @@ app.post("/api/send-notification", async (req, res) => {
 
     console.log("✅ ERPID:", erpid);
 
-    await sendNotification(erpid);
+    await sendNotification(erpid, type);
 
     res.json({ success: true });
   } catch (error: any) {
@@ -84,12 +84,16 @@ app.post("/api/send-notification", async (req, res) => {
 app.get("/api/attendance", authenticateRequest, async (req: any, res) => {
   try {
     const erpId = req.authUser?.erpId;
+    const todayIst = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Kolkata",
+    }).format(new Date());
 
     const { data, error } = await supabase
       .from("attendance_logs")
       .select("*")
       .eq("erpid", erpId)
-      .order("date", { ascending: false })
+      .eq("date", todayIst)
+      .or("login_time.not.is.null,logout_time.not.is.null")
       .limit(1);
 
     if (error) {
@@ -98,6 +102,28 @@ app.get("/api/attendance", authenticateRequest, async (req: any, res) => {
 
     res.json({ attendance: data });
   } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.get("/api/attendance/history", authenticateRequest, async (req: any, res) => {
+  try {
+    const erpId = req.authUser?.erpId;
+
+    const { data, error } = await supabase
+      .from("attendance_logs")
+      .select("*")
+      .eq("erpid", erpId)
+      .order("date", { ascending: false })
+      .order("login_time", { ascending: false, nullsFirst: false })
+      .limit(100);
+
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+
+    res.json({ attendance: data ?? [] });
+  } catch (_err) {
     res.status(500).json({ error: "Server error" });
   }
 });
@@ -118,7 +144,7 @@ app.post("/api/attendance", authenticateRequest, async (req: any, res) => {
     }
 
     // Trigger notification
-    await sendNotification(erpId);
+    await sendNotification(erpId, "login");
 
     res.json({ success: true, data });
   } catch (err) {

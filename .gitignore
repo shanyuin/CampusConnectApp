@@ -1,0 +1,18 @@
+# Local Gradle cache redirected for this repo
+.gradle-home/
+
+# Node/Expo dependencies and caches
+**/node_modules/
+**/.expo/
+**/.expo-shared/
+
+# Android build artifacts
+**/android/.gradle/
+**/android/build/
+**/android/app/build/
+**/android/app/.cxx/
+
+# General temp/log files
+*.log
+.DS_Store
+Thumbs.db

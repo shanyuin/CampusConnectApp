@@ -3,7 +3,6 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import LoginComponent from '../components/Logins/LoginComponent';
-
 import { requestNotificationPermission, setupForegroundListener , setupBackgroundHandler } from '../services/notificationService';
 
 type AuthUser = {

@@ -1,9 +1,41 @@
 import messaging from '@react-native-firebase/messaging';
-import { Alert } from 'react-native';
+import { PermissionsAndroid, Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const NOTIFICATION_PERMISSION_ASKED_KEY = 'notification_permission_asked';
+
+async function isAndroidNotificationPermissionGranted() {
+  if (Platform.OS !== 'android') return false;
+  if (Platform.Version < 33) return true;
+  return PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
+}
 
 export async function requestNotificationPermission() {
   try {
+    if (Platform.OS === 'android') {
+      const alreadyGranted = await isAndroidNotificationPermissionGranted();
+      if (alreadyGranted) {
+        return true;
+      }
+
+      const alreadyAsked = await AsyncStorage.getItem(NOTIFICATION_PERMISSION_ASKED_KEY);
+      if (alreadyAsked) {
+        return false;
+      }
+
+      if (Platform.Version >= 33) {
+        const result = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
+        );
+        await AsyncStorage.setItem(NOTIFICATION_PERMISSION_ASKED_KEY, 'true');
+        return result === PermissionsAndroid.RESULTS.GRANTED;
+      }
+
+      return true;
+    }
+
     const authStatus = await messaging().requestPermission();
+    await AsyncStorage.setItem(NOTIFICATION_PERMISSION_ASKED_KEY, 'true');
 
     const enabled =
       authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
@@ -34,12 +66,9 @@ export async function getFCMToken() {
 export function setupForegroundListener() {
   try {
     return messaging().onMessage(async remoteMessage => {
-      console.log('Foreground Message:', remoteMessage);
-
-      Alert.alert(
-        remoteMessage.notification?.title || 'Notification',
-        remoteMessage.notification?.body || ''
-      );
+      // Intentionally do not show in-app alerts.
+      // We only want OS/system notifications when app is in background/closed.
+      console.log('Foreground message received (no in-app popup):', remoteMessage?.messageId);
     });
   } catch (error) {
     console.warn('Foreground listener unavailable:', error);

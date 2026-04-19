@@ -63,13 +63,13 @@ app.post("/api/auth/store-fcm-token", authMiddleware_1.authenticateRequest, (req
 app.post("/api/send-notification", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         console.log("🔥 RAW BODY:", req.body);
-        const { erpid } = req.body;
+        const { erpid, type } = req.body;
         if (!erpid) {
             console.log("❌ ERPID missing");
             return res.status(400).json({ error: "erpid is required" });
         }
         console.log("✅ ERPID:", erpid);
-        yield (0, firebaseAdmin_1.sendNotification)(erpid);
+        yield (0, firebaseAdmin_1.sendNotification)(erpid, type);
         res.json({ success: true });
     }
     catch (error) {
@@ -81,11 +81,15 @@ app.get("/api/attendance", authMiddleware_1.authenticateRequest, (req, res) => _
     var _a;
     try {
         const erpId = (_a = req.authUser) === null || _a === void 0 ? void 0 : _a.erpId;
+        const todayIst = new Intl.DateTimeFormat("en-CA", {
+            timeZone: "Asia/Kolkata",
+        }).format(new Date());
         const { data, error } = yield supabase_1.supabase
             .from("attendance_logs")
             .select("*")
             .eq("erpid", erpId)
-            .order("date", { ascending: false })
+            .eq("date", todayIst)
+            .or("login_time.not.is.null,logout_time.not.is.null")
             .limit(1);
         if (error) {
             return res.status(500).json({ error: error.message });
@@ -93,6 +97,26 @@ app.get("/api/attendance", authMiddleware_1.authenticateRequest, (req, res) => _
         res.json({ attendance: data });
     }
     catch (err) {
+        res.status(500).json({ error: "Server error" });
+    }
+}));
+app.get("/api/attendance/history", authMiddleware_1.authenticateRequest, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        const erpId = (_a = req.authUser) === null || _a === void 0 ? void 0 : _a.erpId;
+        const { data, error } = yield supabase_1.supabase
+            .from("attendance_logs")
+            .select("*")
+            .eq("erpid", erpId)
+            .order("date", { ascending: false })
+            .order("login_time", { ascending: false, nullsFirst: false })
+            .limit(100);
+        if (error) {
+            return res.status(500).json({ error: error.message });
+        }
+        res.json({ attendance: data !== null && data !== void 0 ? data : [] });
+    }
+    catch (_err) {
         res.status(500).json({ error: "Server error" });
     }
 }));
@@ -110,7 +134,7 @@ app.post("/api/attendance", authMiddleware_1.authenticateRequest, (req, res) => 
             return res.status(500).json({ error: error.message });
         }
         // Trigger notification
-        yield (0, firebaseAdmin_1.sendNotification)(erpId);
+        yield (0, firebaseAdmin_1.sendNotification)(erpId, "login");
         res.json({ success: true, data });
     }
     catch (err) {

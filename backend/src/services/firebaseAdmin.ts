@@ -35,8 +35,34 @@ function chunk<T>(arr: T[], size: number): T[][] {
     return out;
 }
 
-export async function sendNotification(erpid: string | number) {
+type AttendanceEventType = 'login' | 'logout';
+
+function normalizeEventType(value: unknown): AttendanceEventType {
+    return value === 'logout' ? 'logout' : 'login';
+}
+
+function buildNotificationContent(eventType: AttendanceEventType) {
+    if (eventType === 'logout') {
+        return {
+            title: 'Attendance Updated',
+            body: 'Your logout has been recorded',
+        };
+    }
+
+    return {
+        title: 'Attendance Marked',
+        body: 'Your login has been recorded',
+    };
+}
+
+export async function sendNotification(
+    erpid: string | number,
+    eventTypeInput: unknown = 'login'
+) {
     const erpidStr = String(erpid).trim();
+    const eventType = normalizeEventType(eventTypeInput);
+    const notificationContent = buildNotificationContent(eventType);
+
     if (!erpidStr) {
         console.warn('sendNotification called without erpid');
         return { successCount: 0, failureCount: 0, deletedCount: 0 };
@@ -68,14 +94,28 @@ export async function sendNotification(erpid: string | number) {
             const message: admin.messaging.MulticastMessage = {
                 tokens: tokenBatch,
                 notification: {
-                    title: 'Attendance Marked',
-                    body: 'Your login has been recorded',
+                    title: notificationContent.title,
+                    body: notificationContent.body,
                 },
                 data: {
                     type: 'attendance',
+                    attendanceType: eventType,
                     erpid: erpidStr, // must be string
                 },
-                android: { priority: 'high' },
+                android: {
+                    priority: 'high',
+                    notification: {
+                        channelId: 'attendance_alerts',
+                        sound: 'attendance_tone',
+                    },
+                },
+                apns: {
+                    payload: {
+                        aps: {
+                            sound: 'default',
+                        },
+                    },
+                },
             };
 
             const resp = await messaging.sendEachForMulticast(message);
@@ -111,6 +151,7 @@ export async function sendNotification(erpid: string | number) {
 
         console.log('Notification summary:', {
             erpid: erpidStr,
+            eventType,
             totalTokens: tokens.length,
             successCount,
             failureCount,
