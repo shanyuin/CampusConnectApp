@@ -192,8 +192,7 @@ export default function HomeComponent({
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-   // backgroundColor: '#0f172a',
-    backgroundColor:'#7f1d1d',
+    backgroundColor: '#FFFFFF',
     paddingTop: 24,
     paddingHorizontal: 16,
   },
@@ -201,51 +200,50 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#7f1d1d',
+    backgroundColor: '#FFFFFF',
   },
   loadingText: {
-    color: '#fff',
+    color: '#7f1d1d',
     marginTop: 10,
   },
   errorText: {
-    color: '#fca5a5',
+    color: '#7f1d1d',
     marginBottom: 12,
   },
   retryButton: {
     padding: 10,
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#7f1d1d',
     borderRadius: 10,
   },
   retryText: {
-    color: '#fff',
+    color: '#FFF8F0',
   },
   heroCard: {
- //   backgroundColor: '#1d4ed8',
- backgroundColor:'#7f1d1d',
+    backgroundColor: '#7f1d1d',
     borderRadius: 16,
     padding: 16,
   },
   welcomeText: {
-    color: '#dbeafe',
+    color: '#F5E6D3',
   },
   title: {
-    color: '#fff',
+    color: '#FFF8F0',
     fontSize: 22,
     fontWeight: '800',
   },
   subtitle: {
-    color: '#e0ecff',
+    color: '#F5E6D3',
   },
   logoutButton: {
     marginTop: 12,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    backgroundColor: '#ef4444',
+    backgroundColor: '#5c1212',
     borderRadius: 10,
-    alignSelf: 'flex-start', // 🔥 FIX
+    alignSelf: 'flex-start',
   },
   logoutText: {
-    color: '#fff',
+    color: '#FFF8F0',
     fontWeight: '700',
   },
   statsRow: {
@@ -255,28 +253,27 @@ const styles = StyleSheet.create({
   },
   statChip: {
     flex: 1,
-  //  backgroundColor: '#1e40af',
-    backgroundColor: '#7f1d1d',
-
+    backgroundColor: '#5c1212',
     padding: 10,
     borderRadius: 10,
   },
   statLabel: {
-    color: '#bfdbfe',
+    color: '#F5E6D3',
   },
   statValue: {
-    color: '#fff',
+    color: '#FFF8F0',
     fontWeight: '700',
   },
   tableWrapper: {
     marginTop: 20,
-  //  backgroundColor: '#1e293b',
-  backgroundColor:'#7f1d1d',
+    backgroundColor: '#FFFFFF',
     padding: 14,
     borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E8D5C4',
   },
   sectionTitle: {
-    color: '#fff',
+    color: '#7f1d1d',
     fontSize: 18,
     fontWeight: '700',
   },
@@ -288,16 +285,17 @@ const styles = StyleSheet.create({
   },
   detailItem: {
     width: '48%',
-  //  backgroundColor: '#0f172a',
-  backgroundColor:'#7f1d1d',
+    backgroundColor: '#FFF8F0',
     padding: 10,
     borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E8D5C4',
   },
   detailLabel: {
-    color: '#94a3b8',
+    color: '#9e7b6e',
   },
   detailValue: {
-    color: '#fff',
+    color: '#7f1d1d',
     fontWeight: '700',
   },
 });

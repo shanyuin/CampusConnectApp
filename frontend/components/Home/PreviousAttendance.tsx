@@ -95,7 +95,6 @@ export default function PreviousAttendance() {
   const onDateChange = (_: any, date?: Date) => {
     if (Platform.OS === 'android') setShowDatePicker(false);
     if (!date) return;
-
     setDatePickerValue(date);
     filterMode === 'date'
       ? setSelectedDate(formatDate(date))
@@ -106,24 +105,28 @@ export default function PreviousAttendance() {
     <View style={styles.screen}>
       <View style={styles.tableWrapper}>
 
-        {/* FILTER */}
+        {/* FILTER MODE BUTTONS */}
         <View style={styles.filterModeRow}>
           <TouchableOpacity
             style={[styles.modeBtn, filterMode === 'date' && styles.modeBtnActive]}
             onPress={() => setFilterMode('date')}
           >
-            <Text style={styles.modeBtnText}>Date</Text>
+            <Text style={filterMode === 'date' ? styles.modeBtnTextActive : styles.modeBtnText}>
+              Date
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.modeBtn, filterMode === 'month' && styles.modeBtnActive]}
             onPress={() => setFilterMode('month')}
           >
-            <Text style={styles.modeBtnText}>Month</Text>
+            <Text style={filterMode === 'month' ? styles.modeBtnTextActive : styles.modeBtnText}>
+              Month
+            </Text>
           </TouchableOpacity>
         </View>
 
-        {/* DATE PICKER */}
+        {/* DATE PICKER BUTTON */}
         <View style={styles.dateFilterRow}>
           <TouchableOpacity style={styles.datePickerBtn} onPress={() => setShowDatePicker(true)}>
             <Text style={styles.datePickerBtnText}>
@@ -142,23 +145,33 @@ export default function PreviousAttendance() {
         <ScrollView>
           <ScrollView horizontal ref={tableRef}>
             <View style={styles.tableContent}>
+
+              {/* HEADER */}
               <View style={styles.headerRow}>
-                <Text style={styles.cell}>Date</Text>
-                <Text style={styles.cell}>Day</Text>
-                <Text style={styles.cell}>Login</Text>
-                <Text style={styles.cell}>Logout</Text>
-                <Text style={styles.cell}>Hours</Text>
+                <Text style={styles.headerCell}>Date</Text>
+                <Text style={styles.headerCell}>Day</Text>
+                <Text style={styles.headerCell}>Login</Text>
+                <Text style={styles.headerCell}>Logout</Text>
+                <Text style={styles.headerCell}>Hours</Text>
               </View>
 
-              {filteredRows.map((row, i) => (
-                <View key={i} style={styles.row}>
-                  <Text style={styles.cell}>{row.Date}</Text>
-                  <Text style={styles.cell}>{row.Day}</Text>
-                  <Text style={styles.cell}>{row.LoginTime}</Text>
-                  <Text style={styles.cell}>{row.LogoutTime}</Text>
-                  <Text style={styles.cell}>{row.TotalHours.toFixed(2)}</Text>
+              {/* DATA ROWS */}
+              {filteredRows.length === 0 ? (
+                <View style={styles.emptyRow}>
+                  <Text style={styles.emptyText}>No records found</Text>
                 </View>
-              ))}
+              ) : (
+                filteredRows.map((row, i) => (
+                  <View key={i} style={[styles.row, i % 2 === 0 ? styles.rowEven : styles.rowOdd]}>
+                    <Text style={styles.cell}>{row.Date}</Text>
+                    <Text style={styles.cell}>{row.Day}</Text>
+                    <Text style={styles.cell}>{row.LoginTime}</Text>
+                    <Text style={styles.cell}>{row.LogoutTime}</Text>
+                    <Text style={styles.cell}>{row.TotalHours.toFixed(2)}</Text>
+                  </View>
+                ))
+              )}
+
             </View>
           </ScrollView>
         </ScrollView>
@@ -171,14 +184,15 @@ export default function PreviousAttendance() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#7f1d1d', // red theme
+    backgroundColor: '#FFFFFF',
     padding: 12,
   },
   tableWrapper: {
-    backgroundColor: '#7f1d1d',
+    flex: 1,
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#e09c15',
+    borderColor: '#E8D5C4',
     padding: 10,
   },
   filterModeRow: {
@@ -188,47 +202,81 @@ const styles = StyleSheet.create({
   },
   modeBtn: {
     flex: 1,
-    borderColor: '#e09c15',
+    borderColor: '#7f1d1d',
     borderWidth: 1,
     padding: 8,
     borderRadius: 8,
     alignItems: 'center',
+    backgroundColor: '#FFF8F0',
   },
   modeBtnActive: {
-    backgroundColor: '#d1a550',
+    backgroundColor: '#7f1d1d',
   },
   modeBtnText: {
-    color: '#fff',
+    color: '#7f1d1d',
+    fontWeight: '600',
+  },
+  modeBtnTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
   dateFilterRow: {
     marginBottom: 10,
   },
   datePickerBtn: {
     borderWidth: 1,
-    borderColor: '#e09c15',
+    borderColor: '#7f1d1d',
     padding: 10,
     borderRadius: 8,
+    backgroundColor: '#FFF8F0',
   },
   datePickerBtnText: {
-    color: '#fff',
+    color: '#7f1d1d',
+    fontWeight: '600',
   },
   tableContent: {
     width: 575,
   },
   headerRow: {
     flexDirection: 'row',
-    backgroundColor: '#e09c15',
+    backgroundColor: '#7f1d1d',
     padding: 10,
+    borderRadius: 6,
+    marginBottom: 2,
+  },
+  headerCell: {
+    width: 115,
+    color: '#FFFFFF',
+    textAlign: 'center',
+    fontWeight: '700',
+    fontSize: 13,
   },
   row: {
     flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderColor: '#e09c15',
     padding: 10,
+    borderBottomWidth: 1,
+    borderColor: '#E8D5C4',
+  },
+  rowEven: {
+    backgroundColor: '#FFFFFF',
+  },
+  rowOdd: {
+    backgroundColor: '#FFF8F0',
   },
   cell: {
     width: 115,
-    color: '#fff',
+    color: '#1a1a1a',
     textAlign: 'center',
+    fontWeight: '500',
+    fontSize: 13,
+  },
+  emptyRow: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: '#7f1d1d',
+    fontWeight: '600',
+    fontSize: 14,
   },
 });
