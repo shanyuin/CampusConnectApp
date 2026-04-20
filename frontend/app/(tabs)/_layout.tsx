@@ -3,13 +3,14 @@ import { Platform, StyleSheet, Text } from 'react-native';
 import React from 'react';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { View } from 'react-native';
 
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const bottomInset = Math.max(insets.bottom, Platform.OS === 'android' ? 10 : 8);
   const tabBarBottomPadding = bottomInset + (Platform.OS === 'android' ? 8 : 4);
-  const tabBarHeight = (Platform.OS === 'android' ? 61 : 54) + tabBarBottomPadding;
+  const tabBarHeight = (Platform.OS === 'android' ? 65 : 60) + tabBarBottomPadding;
     
 
 
@@ -32,6 +33,7 @@ export default function TabLayout() {
           {
             height: tabBarHeight,
             paddingBottom: tabBarBottomPadding,
+            overflow: 'hidden',  
           },
         ],
       }}
@@ -44,7 +46,22 @@ export default function TabLayout() {
             <Text allowFontScaling={false} numberOfLines={1} style={[styles.tabBarLabel, { color }]}>Home</Text>
           ),
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'home' : 'home-outline'} color={color} size={22} />
+          <View
+            style={{
+              backgroundColor: focused ? '#e09c15' : 'transparent',
+              borderRadius: 30,
+              paddingVertical: 4,   // 🔽 reduce this
+              paddingHorizontal: 5,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Ionicons
+              name={focused ? 'home' : 'home-outline'}
+              size={20} // 🔽 slightly smaller
+              color={color}
+            />
+          </View>
           ),
         }}
       />
@@ -59,8 +76,6 @@ export default function TabLayout() {
            tabBarIcon: ({ color }) => (
              <MaterialIcons name="history" color={color} size={22} />
           ),
-      
-        
         }}
       />
     </Tabs>
@@ -79,15 +94,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0,
     shadowRadius: 0,
     paddingTop: 6,
-    paddingHorizontal: 8,
+    // paddingHorizontal: 8,
     borderColor: '#1e293b',
   },
   tabBarItem: {
-    borderRadius: 14,
-    marginHorizontal: 4,
+    flex: 1,
     marginVertical: 1,
-    paddingTop: 2,
-    paddingBottom: 4,
+    borderRadius: 30,
   },
   tabBarIcon: {
      marginTop:2,

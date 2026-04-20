@@ -3,7 +3,8 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-nativ
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getFCMToken, setupTokenRefresh } from '../../services/notificationService';
 import { Image } from 'react-native';
-import logo from '../../assets/images/logo.png';
+import logo from '../../assets/images/logo1.png';
+import { Ionicons } from '@expo/vector-icons';
 
 type AuthUser = {
   id: string;
@@ -16,6 +17,8 @@ type LoginComponentProps = {
   apiBaseUrl: string;
   onLoginSuccess: (token: string, user: AuthUser) => void;
 };
+
+
 
 export default function LoginComponent({ apiBaseUrl, onLoginSuccess }: LoginComponentProps) {
   const [erpId, setErpId] = useState('');
@@ -159,12 +162,21 @@ export default function LoginComponent({ apiBaseUrl, onLoginSuccess }: LoginComp
             style={[styles.input, styles.passwordInput]}
           />
 
-          <TouchableOpacity style={styles.toggleButton} onPress={() => setShowPassword((current) => !current)}>
-            <Text style={styles.toggleButtonText}>{showPassword ? 'Hide' : 'Show'}</Text>
-          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.toggleButton}
+            onPress={() => setShowPassword((current) => !current)}
+          >
+            <Ionicons
+              name={showPassword ? 'eye' : 'eye-off'}
+              size={18}
+              color="#cbd5e1"
+            />
+        </TouchableOpacity>
         </View>
 
-        {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+          <View style={styles.errorContainer}>
+            {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+          </View>
 
         <TouchableOpacity
           style={[styles.button, isLoading && styles.buttonDisabled]}
@@ -189,14 +201,15 @@ const styles = StyleSheet.create({
    // marginTop: -40,
     paddingTop: 67,
    // backgroundColor: '#0f172a',
-    backgroundColor:'#7f1d1d',
+    // backgroundColor:'#7f1d1d',
+    backgroundColor : '#FFFFFF',
     overflow: 'hidden',
   },
   imageContainer: {
     position: 'absolute',
-  top: 34,
-  width: '100%',
-  alignItems: 'center',
+    top: 120,
+    width: '100%',
+    alignItems: 'center',
   },
    logo: {
     width: 250,
@@ -328,7 +341,7 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     borderRadius: 14,
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: 10,
     shadowColor: '#2563eb',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.25,
@@ -343,12 +356,21 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     fontSize: 15,
   },
+  errorContainer: {
+    minHeight: 45,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    borderRadius: 14,
+    // paddingLeft: 5,
+  },
   errorText: {
     width: '100%',
     color: '#fca5a5',
     marginBottom: 12,
-    marginTop: 10,
+    marginTop: 12,
+    // marginLeft: 10,
     fontWeight: '600',
+    textAlign: 'center',
     lineHeight: 18,
   },
   passwordRow: {
@@ -362,10 +384,12 @@ const styles = StyleSheet.create({
   },
   toggleButton: {
     position: 'absolute',
-    right: 10,
-    top: 13,
+    right: 8,
+    top: '50%',
+    transform: [{ translateY: -18 }], // half of height
+    height: 36,
+    justifyContent: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 8,
     borderRadius: 999,
     backgroundColor: '#7f1d1d',
   },

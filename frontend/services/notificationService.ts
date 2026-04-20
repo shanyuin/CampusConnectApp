@@ -2,6 +2,7 @@ import messaging from '@react-native-firebase/messaging';
 import { PermissionsAndroid, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+
 const NOTIFICATION_PERMISSION_ASKED_KEY = 'notification_permission_asked';
 
 async function isAndroidNotificationPermissionGranted() {

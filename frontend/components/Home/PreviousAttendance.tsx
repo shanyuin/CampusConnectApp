@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type Row = {
   Date: string;
@@ -102,7 +103,7 @@ export default function PreviousAttendance() {
   };
 
   return (
-    <View style={styles.screen}>
+    <SafeAreaView style={styles.screen}>
       <View style={styles.tableWrapper}>
 
         {/* FILTER MODE BUTTONS */}
@@ -177,7 +178,7 @@ export default function PreviousAttendance() {
         </ScrollView>
 
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 

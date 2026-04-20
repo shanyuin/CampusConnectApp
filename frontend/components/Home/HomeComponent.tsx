@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   View,
   Text,
@@ -131,7 +132,7 @@ export default function HomeComponent({
 
   // 🔥 Main UI (your original design)
   return (
-    <View style={styles.screen}>
+    <SafeAreaView style={styles.screen}>
       <View style={styles.heroCard}>
         <Text style={styles.welcomeText}>Welcome back</Text>
         <Text style={styles.title}>{attendance?.name}</Text>
@@ -185,7 +186,7 @@ export default function HomeComponent({
           </View>
         </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
