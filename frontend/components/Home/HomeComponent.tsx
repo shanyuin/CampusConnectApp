@@ -295,6 +295,8 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: '#7f1d1d',
     borderRadius: 10,
+    marginBottom: 15,
+    marginTop: 10,
   },
   retryText: {
     color: '#FFF8F0',
