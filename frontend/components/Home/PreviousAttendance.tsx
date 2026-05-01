@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Refresh
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Animated } from 'react-native';
 
 type Row = {
   Date: string;
@@ -56,6 +57,8 @@ const toDayName = (dateStr?: string | null) => {
 
 
 
+
+
 export default function PreviousAttendance() {
   const [rows, setRows] = useState<Row[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -69,6 +72,8 @@ export default function PreviousAttendance() {
   const [fromDate, setFromDate] = useState<Date | null>(null);
   const [toDate, setToDate] = useState<Date | null>(null);
   const [pickerMode, setPickerMode] = useState<'from' | 'to' | null>(null);
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   const fetchHistory = async () => {
       try {
@@ -114,42 +119,187 @@ export default function PreviousAttendance() {
     fetchHistory();
   }, []);
 
+  useEffect(() => {
+    if (showMonthPicker) {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      fadeAnim.setValue(0);
+    }
+  }, [showMonthPicker]);
+
   const filteredRows = useMemo(() => {
   if (filterMode === 'date') {
-    if (selectedDate === 'All') return rows;
+    const baseDate =
+      selectedDate === 'All'
+        ? new Date()
+        : new Date(selectedDate.split('-').reverse().join('-') + 'T00:00:00');
 
-    const [day, month, year] = selectedDate.split('-');
-    const selected = new Date(`${year}-${month}-${day}T00:00:00`);
-    const weekStart = new Date(selected);
-    weekStart.setDate(selected.getDate() - selected.getDay());
+    const dayIndex = baseDate.getDay(); // 0 = Sunday
+    const mondayOffset = dayIndex === 0 ? -6 : 1 - dayIndex;
 
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekStart.getDate() + 6);
+    const weekStart = new Date(baseDate);
+    weekStart.setDate(baseDate.getDate() + mondayOffset);
+    weekStart.setHours(0, 0, 0, 0);
 
-    return rows.filter((r) => {
-      const d = new Date(r.Date + 'T00:00:00');
-      return d >= weekStart && d <= weekEnd;
+    // ✅ generate 7 days (Mon → Sun)
+    const weekDates: string[] = [];
+
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(weekStart);
+      d.setDate(weekStart.getDate() + i);
+
+      if (d > today) break;
+
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+
+      weekDates.push(`${yyyy}-${mm}-${dd}`);
+    }
+
+    // ✅ map existing rows
+    const rowMap = new Map(rows.map((r) => [r.Date, r]));
+
+    // ✅ build final 7 rows
+    return weekDates.map((dateStr) => {
+      if (rowMap.has(dateStr)) {
+        return rowMap.get(dateStr)!;
+      }
+
+      return {
+        Date: dateStr,
+        Day: toDayName(dateStr),
+        LoginTime: '--',
+        LogoutTime: '--',
+        TotalHoursLabel: '--',
+      };
     });
   }
 
   if (filterMode === 'month') {
-    if (!fromDate || !toDate) return rows;
+    // ✅ DEFAULT MONTH VIEW (no from/to)
+    if (!fromDate || !toDate) {
+      if (selectedMonth === 'All') {
+        const today = new Date();
+
+        const start = new Date(today.getFullYear(), today.getMonth(), 1);
+        start.setHours(0, 0, 0, 0);
+
+        const end = new Date(today);
+        end.setHours(23, 59, 59, 999);
+
+        const allDates: string[] = [];
+        const current = new Date(start);
+
+        while (current <= end) {
+          const yyyy = current.getFullYear();
+          const mm = String(current.getMonth() + 1).padStart(2, '0');
+          const dd = String(current.getDate()).padStart(2, '0');
+
+          allDates.push(`${yyyy}-${mm}-${dd}`);
+          current.setDate(current.getDate() + 1);
+        }
+
+        const rowMap = new Map(rows.map((r) => [r.Date, r]));
+
+        return allDates.map((dateStr) => {
+          if (rowMap.has(dateStr)) return rowMap.get(dateStr)!;
+
+          return {
+            Date: dateStr,
+            Day: toDayName(dateStr),
+            LoginTime: '--',
+            LogoutTime: '--',
+            TotalHoursLabel: '--',
+          };
+        });
+      }
+
+      const [year, month] = selectedMonth.split('-').map(Number);
+
+      const start = new Date(year, month - 1, 1);
+      start.setHours(0, 0, 0, 0);
+
+      const end = new Date(year, month, 0); // last day of month
+      end.setHours(23, 59, 59, 999);
+
+      const today = new Date();
+      const finalEnd = end > today ? today : end;
+
+      const allDates: string[] = [];
+      const current = new Date(start);
+
+      while (current <= finalEnd) {
+        const yyyy = current.getFullYear();
+        const mm = String(current.getMonth() + 1).padStart(2, '0');
+        const dd = String(current.getDate()).padStart(2, '0');
+
+        allDates.push(`${yyyy}-${mm}-${dd}`);
+        current.setDate(current.getDate() + 1);
+      }
+
+      const rowMap = new Map(rows.map((r) => [r.Date, r]));
+
+      return allDates.map((dateStr) => {
+        if (rowMap.has(dateStr)) return rowMap.get(dateStr)!;
+
+        return {
+          Date: dateStr,
+          Day: toDayName(dateStr),
+          LoginTime: '--',
+          LogoutTime: '--',
+          TotalHoursLabel: '--',
+        };
+      });
+    }
+
+    // ✅ RANGE FILTER (your existing logic stays same)
+    if (!fromDate || !toDate) {
+      return rows; // do nothing until both selected
+    }
 
     const start = fromDate < toDate ? fromDate : toDate;
     const end = fromDate < toDate ? toDate : fromDate;
 
-    // 🔥 make "to" inclusive (end of day)
     const endOfDay = new Date(end);
     endOfDay.setHours(23, 59, 59, 999);
 
-    return rows.filter((r) => {
-      const d = new Date(r.Date + 'T00:00:00');
-      return d >= start && d <= endOfDay;
+    const allDates: string[] = [];
+    const current = new Date(start);
+
+    while (current <= endOfDay) {
+      const yyyy = current.getFullYear();
+      const mm = String(current.getMonth() + 1).padStart(2, '0');
+      const dd = String(current.getDate()).padStart(2, '0');
+
+      allDates.push(`${yyyy}-${mm}-${dd}`);
+      current.setDate(current.getDate() + 1);
+    }
+
+    const rowMap = new Map(rows.map((r) => [r.Date, r]));
+
+    return allDates.map((dateStr) => {
+      if (rowMap.has(dateStr)) return rowMap.get(dateStr)!;
+
+      return {
+        Date: dateStr,
+        Day: toDayName(dateStr),
+        LoginTime: '--',
+        LogoutTime: '--',
+        TotalHoursLabel: '--',
+      };
     });
   }
 
   return rows;
-}, [rows, filterMode, selectedDate, fromDate, toDate]);
+}, [rows, filterMode, selectedDate, selectedMonth, fromDate, toDate]);
 
   const onDateChange = (_: any, date?: Date) => {
     if (Platform.OS === 'android') setShowDatePicker(false);
@@ -192,7 +342,16 @@ export default function PreviousAttendance() {
 
         {/* DATE PICKER BUTTON */}
         <View style={styles.dateFilterRow}>
-          <TouchableOpacity style={styles.datePickerBtn} onPress={() => setShowDatePicker(true)}>
+          <TouchableOpacity
+            style={styles.datePickerBtn}
+            onPress={() => {
+              if (filterMode === 'date') {
+                setShowDatePicker(true);
+              } else {
+                setShowMonthPicker(true);
+              }
+            }}
+          >
             <Text style={styles.datePickerBtnText}>
               {filterMode === 'date'
                 ? selectedDate === 'All' ? 'Select Date' : selectedDate
@@ -221,6 +380,7 @@ export default function PreviousAttendance() {
           <TouchableOpacity
             style={[styles.datePickerBtn, { flex: 1 }]}
             onPress={() => {
+              setSelectedMonth('All'); // 🔥 clear month
               setPickerMode('from');
               setShowDatePicker(true);
             }}
@@ -233,6 +393,7 @@ export default function PreviousAttendance() {
           <TouchableOpacity
             style={[styles.datePickerBtn, { flex: 1 }]}
             onPress={() => {
+              setSelectedMonth('All'); // 🔥 clear month
               setPickerMode('to');
               setShowDatePicker(true);
             }}
@@ -258,7 +419,84 @@ export default function PreviousAttendance() {
           
 
         {showDatePicker && (
-          <DateTimePicker value={datePickerValue} mode="date" onChange={onDateChange} />
+          <DateTimePicker
+            value={
+              pickerMode === 'from'
+                ? fromDate || new Date()
+                : pickerMode === 'to'
+                ? toDate || new Date()
+                : datePickerValue
+            }
+            mode="date"
+            onChange={onDateChange}
+          />
+        )}
+        {showMonthPicker && (
+          <View style={styles.overlay}>
+
+  {/* background click catcher */}
+  <TouchableOpacity
+    style={StyleSheet.absoluteFillObject}
+    activeOpacity={1}
+    onPress={() => setShowMonthPicker(false)}
+  />
+
+  {/* foreground (DO NOT use Touchable here) */}
+  <Animated.View
+    style={{
+      opacity: fadeAnim,
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    }}
+    pointerEvents="box-none"   // 🔥 IMPORTANT
+  >
+    <View style={styles.monthBox}>
+      <ScrollView
+        showsVerticalScrollIndicator={true}
+        indicatorStyle="black" // iOS
+      >
+                    
+                    {[
+                      'January','February','March','April','May','June',
+                      'July','August','September','October','November','December'
+                    ].map((month, index) => {
+                      const value = `${new Date().getFullYear()}-${String(index + 1).padStart(2, '0')}`;
+
+                      return (
+                        <TouchableOpacity
+                          key={month}
+                          style={[
+                            styles.monthItem,
+                            selectedMonth === value && styles.monthItemActive
+                          ]}
+                          onPress={() => {
+                            setSelectedMonth(value);
+
+                            // 🔥 IMPORTANT: clear range
+                            setFromDate(null);
+                            setToDate(null);
+
+                            setShowMonthPicker(false);
+                          }}
+                        >
+                          <Text
+                            style={[
+                              styles.monthText,
+                              selectedMonth === value && styles.monthTextActive
+                            ]}
+                          >
+                            {month}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+
+                  </ScrollView>
+                </View>
+
+            </Animated.View>
+          </View>
         )}
 
         {/* TABLE */}
@@ -285,13 +523,36 @@ export default function PreviousAttendance() {
               </View>
 
               {/* DATA ROWS */}
-              {filteredRows.length === 0 ? (
-                <View style={styles.emptyRow}>
-                  <Text style={styles.emptyText}>No records found</Text>
-                </View>
-              ) : (
-                filteredRows.map((row, i) => (
-                  <View key={i} style={[styles.row, i % 2 === 0 ? styles.rowEven : styles.rowOdd]}>
+              {(() => {
+                const isFutureMonth =
+                  filterMode === 'month' &&
+                  selectedMonth !== 'All' &&
+                  new Date(selectedMonth + '-01') > new Date();
+
+                if (isFutureMonth) {
+                  return (
+                    <View style={styles.emptyState}>
+                      <Text style={styles.emptyStateTitle}>No attendance data yet</Text>
+                      <Text style={styles.emptyStateText}>
+                        Pull down to refresh when your attendance is available.
+                      </Text>
+                    </View>
+                  );
+                }
+
+                if (filteredRows.length === 0) {
+                  return (
+                    <View style={styles.emptyRow}>
+                      <Text style={styles.emptyText}>No records found</Text>
+                    </View>
+                  );
+                }
+
+                return filteredRows.map((row, i) => (
+                  <View
+                    key={i}
+                    style={[styles.row, i % 2 === 0 ? styles.rowEven : styles.rowOdd]}
+                  >
                     <Text style={styles.cell}>
                       {row.Date !== '--'
                         ? formatDate(new Date(row.Date + 'T00:00:00'))
@@ -302,8 +563,8 @@ export default function PreviousAttendance() {
                     <Text style={styles.cell}>{row.LogoutTime}</Text>
                     <Text style={styles.cell}>{row.TotalHoursLabel}</Text>
                   </View>
-                ))
-              )}
+                ));
+              })()}
 
             </View>
           </ScrollView>
@@ -427,5 +688,66 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#9e7b6e',
     fontWeight: '500',
+  },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999,
+    elevation: 10,
+  },
+
+  monthBox: {
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    paddingVertical: 10,
+    width: 240,
+    maxHeight: '75%', 
+  },
+
+  monthItem: {
+    paddingVertical: 12,
+    borderBottomWidth: 0.5,
+    borderColor: '#eee',
+  },
+
+  monthText: {
+    fontSize: 15,
+    color: '#7f1d1d',
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  emptyState: {
+    marginTop: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: '#FFF8F0',
+    borderWidth: 1,
+    borderColor: '#E8D5C4',
+  },
+
+  emptyStateTitle: {
+    color: '#7f1d1d',
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+
+  emptyStateText: {
+    color: '#9e7b6e',
+  },
+  monthTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  monthItemActive: {
+    backgroundColor: '#7f1d1d',
+    marginHorizontal: 12,   // 🔥 THIS creates side spacing
+    borderRadius: 10,
   },
 });

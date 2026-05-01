@@ -72,6 +72,15 @@ export default function HomeComponent({
   const [refreshing, setRefreshing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [hasAttendanceData, setHasAttendanceData] = useState(true);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const handleLogout = () => {
+    setLoggingOut(true);
+
+    setTimeout(() => {
+      onLogout?.();
+    }, 800);
+  };
 
   const fetchAttendance = useCallback(async (isRefresh = false) => {
     if (isRefresh) {
@@ -161,7 +170,7 @@ export default function HomeComponent({
         </TouchableOpacity>
 
         {onLogout && (
-          <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} disabled={loggingOut}>
             <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
         )}
@@ -190,7 +199,7 @@ export default function HomeComponent({
         <Text style={styles.title}>{attendance?.name ?? user?.name ?? 'Faculty'}</Text>         
              
         {onLogout && (
-          <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} disabled={loggingOut}>
             <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
         )}
@@ -266,6 +275,14 @@ export default function HomeComponent({
 
       </View>
       </ScrollView>
+      {loggingOut && (
+      <View style={styles.logoutOverlay}>
+        <View style={styles.logoutBox}>
+          <ActivityIndicator size="large" color="#7f1d1d" />
+          <Text style={styles.logoutLoadingText}>Logging out...</Text>
+        </View>
+      </View>
+    )}
     </SafeAreaView>
   );
 }
@@ -445,5 +462,28 @@ const styles = StyleSheet.create({
   flexShrink: 1,
   flexWrap: 'wrap',
   textAlign: 'right',
+  },
+  logoutOverlay: {
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  backgroundColor: 'rgba(0,0,0,0.4)',
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+
+logoutBox: {
+  backgroundColor: '#FFFFFF',
+  padding: 20,
+  borderRadius: 14,
+  alignItems: 'center',
+  gap: 10,
+},
+
+logoutLoadingText: {
+  color: '#7f1d1d',
+  fontWeight: '600',
 },
 });
