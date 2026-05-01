@@ -1,17 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <application
-        android:usesCleartextTraffic="true"
-        tools:targetApi="28"
-        tools:replace="android:usesCleartextTraffic">
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
 
-        <!-- Fix Firebase conflict -->
-        <meta-data
-            android:name="com.google.firebase.messaging.default_notification_channel_id"
-            android:value="attendance_alerts_v2"
-            tools:replace="android:value" />
-
-    </application>
-
+    <application android:usesCleartextTraffic="true" tools:targetApi="28" tools:ignore="GoogleAppIndexingWarning" tools:replace="android:usesCleartextTraffic" />
 </manifest>
