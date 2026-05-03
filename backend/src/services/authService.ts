@@ -7,6 +7,7 @@ export interface User {
   erpid: string;
   name: string;
   dept: string;
+  role?: string | null;
 }
 
 type UserRow = {
@@ -87,6 +88,7 @@ class AuthService {
       erpid: resolveErpId(data),
       name: data.name,
       dept: data.dept ?? "",
+      role: data.role ?? null,
     };
   }
 
@@ -133,16 +135,49 @@ export const loginWithErpCredentials = async (payload: LoginRequest): Promise<Lo
 
   const user = await AuthService.login(erpId, password);
 
+  // If the client provided a desired role, accept it when the stored role
+  // is missing (null). If a stored role exists, validate it matches the
+  // requested role. Accept common aliases (e.g., 'security_guard' vs 'guard').
+  const normalizeRole = (r?: string | null) =>
+    (r ?? '').toString().trim().toLowerCase().replace(/[^a-z]/g, '');
+
+  if (payload.role) {
+    const requested = normalizeRole(payload.role);
+    const actual = normalizeRole(user.role ?? null);
+
+    if (!actual) {
+      // Stored role missing — use the requested role as a fallback.
+      user.role = payload.role === 'security_guard' || requested.includes('guard')
+        ? 'Security Guard'
+        : payload.role === 'faculty' || requested.includes('faculty')
+          ? 'Faculty'
+          : payload.role;
+    } else {
+      const isMatch = requested === actual ||
+        (requested.includes('guard') && actual.includes('guard')) ||
+        (requested.includes('faculty') && actual.includes('faculty'));
+
+      if (!isMatch) {
+        throw new Error('Role mismatch');
+      }
+    }
+  }
+
   const token = jwt.sign(
     {
       sub: user.erpid,
       erpId: user.erpid,
       name: user.name,
-      role: null,
+      role: user.role ?? null,
     } satisfies JwtPayload,
     JWT_SECRET,
     { expiresIn: JWT_EXPIRATION },
   );
+
+  // Debug: log what will be returned so we can trace role propagation
+  try {
+    console.log('loginWithErpCredentials -> returning user role:', user.role);
+  } catch (_) {}
 
   return {
     token,
@@ -150,7 +185,7 @@ export const loginWithErpCredentials = async (payload: LoginRequest): Promise<Lo
       id: user.erpid,
       erpid: user.erpid,
       name: user.name,
-      role: null,
+      role: user.role ?? null,
       dept: user.dept,
     }),
   };

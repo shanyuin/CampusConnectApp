@@ -1,6 +1,7 @@
 export type LoginRequest = {
   erpId: string;
   password: string;
+  role?: string;
 };
 
 export type AuthUser = {

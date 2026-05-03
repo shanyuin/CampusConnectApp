@@ -73,6 +73,7 @@ class AuthService {
                 erpid: resolveErpId(data),
                 name: data.name,
                 dept: (_b = data.dept) !== null && _b !== void 0 ? _b : "",
+                role: ((_c = data.role) !== null && _c !== void 0 ? _c : null),
             };
         });
     }
@@ -114,11 +115,31 @@ const loginWithErpCredentials = (payload) => __awaiter(void 0, void 0, void 0, f
         throw new Error("ERP ID and password are required.");
     }
     const user = yield AuthService.login(erpId, password);
+    const normalizeRole = (r) => (r !== null && r !== void 0 ? r : '').toString().trim().toLowerCase().replace(/[^a-z]/g, '');
+    if (payload.role) {
+        const requested = normalizeRole(payload.role);
+        const actual = normalizeRole(user.role);
+        if (!actual) {
+            user.role = payload.role === 'security_guard' || requested.includes('guard')
+                ? 'Security Guard'
+                : payload.role === 'faculty' || requested.includes('faculty')
+                    ? 'Faculty'
+                    : payload.role;
+        }
+        else {
+            const isMatch = requested === actual ||
+                (requested.includes('guard') && actual.includes('guard')) ||
+                (requested.includes('faculty') && actual.includes('faculty'));
+            if (!isMatch) {
+                throw new Error('Role mismatch');
+            }
+        }
+    }
     const token = jsonwebtoken_1.default.sign({
         sub: user.erpid,
         erpId: user.erpid,
         name: user.name,
-        role: null,
+        role:((_a = user.role) !== null && _a !== void 0 ? _a : null),
     }, JWT_SECRET, { expiresIn: JWT_EXPIRATION });
     return {
         token,
@@ -126,7 +147,7 @@ const loginWithErpCredentials = (payload) => __awaiter(void 0, void 0, void 0, f
             id: user.erpid,
             erpid: user.erpid,
             name: user.name,
-            role: null,
+            role: (user.role !== null && user.role !== void 0 ? user.role : null),
             dept: user.dept,
         }),
     };
