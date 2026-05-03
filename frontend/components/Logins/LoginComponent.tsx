@@ -11,6 +11,13 @@ type LoginComponentProps = {
   onLoginSuccess: (session: AuthSession) => Promise<void> | void;
 };
 
+type RoleValue = 'faculty' | 'security_guard';
+
+type RoleOption = {
+  label: string;
+  value: RoleValue;
+};
+
 const LAST_LOGIN_CREDENTIALS_KEY = 'last_login_credentials';
 
 export default function LoginComponent({ apiBaseUrl, onLoginSuccess }: LoginComponentProps) {
@@ -20,6 +27,13 @@ export default function LoginComponent({ apiBaseUrl, onLoginSuccess }: LoginComp
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  const [open, setOpen] = useState(false);
+  const [role, setRole] = useState<RoleValue | null>(null);
+  const [items, setItems] = useState<RoleOption[]>([
+    { label: "Faculty", value: "faculty" },
+    { label: "Security Guard", value: "security_guard" },
+  ]);
 
   useEffect(() => {
     const loadSavedCredentials = async () => {
@@ -90,6 +104,11 @@ export default function LoginComponent({ apiBaseUrl, onLoginSuccess }: LoginComp
 
       if (!trimmedErpId || !password.trim()) {
         setErrorMessage('Enter your ERP ID and password to continue.');
+        return;
+      }
+
+      if (!role) {
+        setErrorMessage('Please select your role before logging in.');
         return;
       }
 
@@ -184,6 +203,44 @@ export default function LoginComponent({ apiBaseUrl, onLoginSuccess }: LoginComp
               </TouchableOpacity>
             );
           })}
+        </View>
+
+        <Text style={styles.roleLabel}>Select Role</Text>
+
+
+        <View style={styles.dropdownWrapper}>
+          <DropDownPicker
+            open={open}
+            value={role}
+            items={items}
+            setOpen={setOpen}
+            setValue={setRole}
+            setItems={setItems}
+            placeholder="Choose your role"
+            listMode="SCROLLVIEW"
+            maxHeight={180}
+            dropDownDirection="BOTTOM"
+            closeAfterSelecting
+            closeOnBackPressed
+            zIndex={3000}
+            zIndexInverse={1000}
+            style={styles.dropdown}
+            textStyle={styles.dropdownText}
+            placeholderStyle={styles.dropdownPlaceholder}
+            dropDownContainerStyle={styles.dropdownContainer}
+            listItemLabelStyle={styles.dropdownItemLabel}
+            selectedItemContainerStyle={styles.dropdownSelectedItemContainer}
+            selectedItemLabelStyle={styles.dropdownSelectedItemLabel}
+            ArrowDownIconComponent={() => (
+              <Ionicons name="chevron-down" size={18} color="#7f1d1d" />
+            )}
+            ArrowUpIconComponent={() => (
+              <Ionicons name="chevron-up" size={18} color="#7f1d1d" />
+            )}
+            TickIconComponent={() => (
+              <Ionicons name="checkmark" size={16} color="#7f1d1d" />
+            )}
+          />
         </View>
 
         <TextInput
@@ -332,7 +389,7 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     borderRadius: 14,
     alignItems: 'center',
-    marginTop: 10,
+ //   marginTop: 10,
     shadowColor: '#2563eb',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.25,
