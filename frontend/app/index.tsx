@@ -20,6 +20,7 @@ export default function Login() {
   const router = useRouter();
 
   const apiBaseUrl = 'https://campusconnectapp-lu1d.onrender.com';
+  // const apiBaseUrl = 'http://localhost:5000/';
 
   // 🔥 Load saved login on app start
   useEffect(() => {
@@ -30,10 +31,17 @@ export default function Login() {
 
         if (savedToken && savedUser) {
           setToken(savedToken);
-          setUser(JSON.parse(savedUser));
+          const parsed = JSON.parse(savedUser);
+          setUser(parsed);
 
-          // Auto redirect if already logged in
-          router.replace('/(tabs)/home');
+          const isGuardRole = (r?: string | null) => typeof r === 'string' && r.toLowerCase().includes('guard');
+
+          // Auto redirect if already logged in — send guards to guardhome
+          if (isGuardRole(parsed?.role)) {
+            router.replace('/guardhome');
+          } else {
+            router.replace('/(tabs)/home');
+          }
         }
       } catch (error) {
         console.log('Error loading auth:', error);
@@ -73,8 +81,13 @@ export default function Login() {
       setToken(nextToken);
       setUser(nextUser);
 
-      // Navigate after login
-      router.replace('/(tabs)/home');
+      // Navigate after login — send guards to guardhome
+      const isGuardRole = (r?: string | null) => typeof r === 'string' && r.toLowerCase().includes('guard');
+      if (isGuardRole(nextUser?.role)) {
+        router.replace('/guardhome');
+      } else {
+        router.replace('/(tabs)/home');
+      }
     } catch (error) {
       console.log('Login save error:', error);
     }

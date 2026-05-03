@@ -5,6 +5,7 @@ import { getFCMToken, setupTokenRefresh } from '../../services/notificationServi
 import { Image } from 'react-native';
 import logo from '../../assets/images/logo1.png';
 import { Ionicons } from '@expo/vector-icons';
+import DropDownPicker from "react-native-dropdown-picker";
 
 type AuthUser = {
   id: string;
@@ -18,6 +19,13 @@ type LoginComponentProps = {
   onLoginSuccess: (token: string, user: AuthUser) => void;
 };
 
+type RoleValue = 'faculty' | 'security_guard';
+
+type RoleOption = {
+  label: string;
+  value: RoleValue;
+};
+
 const LAST_LOGIN_CREDENTIALS_KEY = 'last_login_credentials';
 
 
@@ -28,6 +36,13 @@ export default function LoginComponent({ apiBaseUrl, onLoginSuccess }: LoginComp
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  const [open, setOpen] = useState(false);
+  const [role, setRole] = useState<RoleValue | null>(null);
+  const [items, setItems] = useState<RoleOption[]>([
+    { label: "Faculty", value: "faculty" },
+    { label: "Security Guard", value: "security_guard" },
+  ]);
 
   useEffect(() => {
     const loadSavedCredentials = async () => {
@@ -99,18 +114,34 @@ export default function LoginComponent({ apiBaseUrl, onLoginSuccess }: LoginComp
         return;
       }
 
+      if (!role) {
+        setErrorMessage('Please select your role before logging in.');
+        return;
+      }
+
       const response = await fetch(`${apiBaseUrl}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           erpId: trimmedErpId,
           password,
+          role,
         }),
       });
+
+      // Debug: log outgoing login payload
+       try {
+         console.log('Login request sent', { erpId: trimmedErpId, role });
+       } catch (_) {}
 
       const payload = (await response.json()) as
         | { token: string; user: AuthUser }
         | { error?: string };
+
+      // Debug: log server response
+       try {
+         console.log('Login response', { ok: response.ok, body: payload });
+       } catch (_) {}
 
       if (!response.ok || !('token' in payload) || !('user' in payload)) {
         const loginError = 'error' in payload ? payload.error : undefined;
@@ -126,9 +157,36 @@ export default function LoginComponent({ apiBaseUrl, onLoginSuccess }: LoginComp
         })
       );
 
+      // If server returned a role, ensure it matches the selected role.
+      const serverRole = payload.user.role;
+      if (serverRole) {
+        const serverIsGuard = typeof serverRole === 'string' && serverRole.toLowerCase().includes('guard');
+        const selectedIsGuard = role === 'security_guard';
+        if (serverIsGuard !== selectedIsGuard) {
+          try { console.warn('LoginComponent - role mismatch: serverRole=', serverRole, 'selected=', role); } catch (_) {}
+          setErrorMessage('Selected role does not match this ERP ID.');
+          return;
+        }
+      }
+
+      const userWithRole: AuthUser = {
+        ...payload.user,
+        role: payload.user.role ?? (role === 'security_guard' ? 'Security Guard' : 'Faculty'),
+      };
+
+      // Debug: log the finalized role after fallback
+      try { console.log('LoginComponent - Final user role:', userWithRole.role, '| Selected role was:', role); } catch (_) {}
+
       await AsyncStorage.setItem('token', payload.token);
-      await AsyncStorage.setItem('user', JSON.stringify(payload.user));
-      onLoginSuccess(payload.token, payload.user);
+      await AsyncStorage.setItem('user', JSON.stringify(userWithRole));
+      
+      try { console.log('LoginComponent - About to call onLoginSuccess with role:', userWithRole.role); } catch (_) {}
+      try {
+        await onLoginSuccess(payload.token, userWithRole);
+        try { console.log('LoginComponent - onLoginSuccess called successfully'); } catch (_) {}
+      } catch (callbackError) {
+        try { console.error('LoginComponent - ERROR in onLoginSuccess callback:', callbackError); } catch (_) {}
+      }
 
       try {
         const fcmToken = await getFCMToken();
@@ -181,6 +239,44 @@ export default function LoginComponent({ apiBaseUrl, onLoginSuccess }: LoginComp
           <Text style={styles.infoLabel}>Daily access</Text>
           <Text style={styles.infoValue}>Secure ERP login for attendance tracking</Text>
         </View> */}
+
+        <Text style={styles.roleLabel}>Select Role</Text>
+
+
+        <View style={styles.dropdownWrapper}>
+          <DropDownPicker
+            open={open}
+            value={role}
+            items={items}
+            setOpen={setOpen}
+            setValue={setRole}
+            setItems={setItems}
+            placeholder="Choose your role"
+            listMode="SCROLLVIEW"
+            maxHeight={180}
+            dropDownDirection="BOTTOM"
+            closeAfterSelecting
+            closeOnBackPressed
+            zIndex={3000}
+            zIndexInverse={1000}
+            style={styles.dropdown}
+            textStyle={styles.dropdownText}
+            placeholderStyle={styles.dropdownPlaceholder}
+            dropDownContainerStyle={styles.dropdownContainer}
+            listItemLabelStyle={styles.dropdownItemLabel}
+            selectedItemContainerStyle={styles.dropdownSelectedItemContainer}
+            selectedItemLabelStyle={styles.dropdownSelectedItemLabel}
+            ArrowDownIconComponent={() => (
+              <Ionicons name="chevron-down" size={18} color="#7f1d1d" />
+            )}
+            ArrowUpIconComponent={() => (
+              <Ionicons name="chevron-up" size={18} color="#7f1d1d" />
+            )}
+            TickIconComponent={() => (
+              <Ionicons name="checkmark" size={16} color="#7f1d1d" />
+            )}
+          />
+        </View>
 
         <TextInput
           placeholder="ERP ID"
@@ -339,6 +435,56 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
+  roleLabel: {
+    color: '#f8fafc',
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  roleHint: {
+    color: '#e5e7eb',
+    fontSize: 12,
+    marginBottom: 10,
+  },
+  dropdownWrapper: {
+    width: '100%',
+    marginBottom: 12,
+    zIndex: 3000,
+  },
+  dropdown: {
+    borderRadius: 14,
+    borderColor: '#e09c15',
+    backgroundColor: '#f3e7e7',
+    minHeight: 52,
+    paddingHorizontal: 12,
+  },
+  dropdownText: {
+    color: '#1f2937',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  dropdownPlaceholder: {
+    color: '#6b7280',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  dropdownContainer: {
+    borderColor: '#e09c15',
+    borderRadius: 14,
+    backgroundColor: '#fff5f5',
+  },
+  dropdownItemLabel: {
+    color: '#1f2937',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  dropdownSelectedItemContainer: {
+    backgroundColor: '#fde8e8',
+  },
+  dropdownSelectedItemLabel: {
+    color: '#7f1d1d',
+    fontWeight: '700',
+  },
   infoCard: {
   //  backgroundColor: 'rgba(30, 41, 59, 0.9)',
   backgroundColor: '#7f1d1d',
@@ -370,7 +516,7 @@ const styles = StyleSheet.create({
     marginBottom:6,
     paddingHorizontal: 16,
     
-    paddingVertical: 14,
+  //  paddingVertical: 14,
     borderRadius: 14,
     color: '#0f172a',
     borderWidth: 1,
@@ -413,7 +559,7 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     borderRadius: 14,
     alignItems: 'center',
-    marginTop: 10,
+ //   marginTop: 10,
     shadowColor: '#2563eb',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.25,

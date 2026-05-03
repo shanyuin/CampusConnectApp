@@ -30,10 +30,17 @@ export default function Login() {
 
         if (savedToken && savedUser) {
           setToken(savedToken);
-          setUser(JSON.parse(savedUser));
+          const parsed = JSON.parse(savedUser);
+          setUser(parsed);
 
-          // Auto redirect if already logged in
-          router.replace('/(tabs)/home');
+          const isGuardRole = (r?: string | null) => typeof r === 'string' && r.toLowerCase().includes('guard');
+
+          // Auto redirect if already logged in — send guards to guardhome
+          if (isGuardRole(parsed?.role)) {
+            router.replace('/guardhome');
+          } else {
+            router.replace('/(tabs)/home');
+          }
         }
       } catch (error) {
         console.log('Error loading auth:', error);
@@ -66,15 +73,27 @@ export default function Login() {
     nextToken: string,
     nextUser: AuthUser
   ) => {
+    console.log('🔴 handleLoginSuccess ENTERED with nextUser:', nextUser);
     try {
+      // Debug: log role received after login
+    //  try { console.log('handleLoginSuccess - role:', nextUser?.role); } catch (_) {}
       await AsyncStorage.setItem('token', nextToken);
       await AsyncStorage.setItem('user', JSON.stringify(nextUser));
 
       setToken(nextToken);
       setUser(nextUser);
 
-      // Navigate after login
-      router.replace('/(tabs)/home');
+      // Navigate after login — send guards to guardhome
+      const isGuardRole = (r?: string | null) => typeof r === 'string' && r.toLowerCase().includes('guard');
+    //  try { console.log('handleLoginSuccess - isGuardRole check:', isGuardRole(nextUser?.role)); } catch (_) {}
+      
+      if (isGuardRole(nextUser?.role)) {
+     //   try { console.log('handleLoginSuccess - Navigating to /guardhome'); } catch (_) {}
+        router.replace('/guardhome');
+      } else {
+      //  try { console.log('handleLoginSuccess - Navigating to /(tabs)/home'); } catch (_) {}
+        router.replace('/(tabs)/home');
+      }
     } catch (error) {
       console.log('Login save error:', error);
     }
