@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const authController_1 = require("../controllers/authController");
+const authMiddleware_1 = require("../middleware/authMiddleware");
+const router = (0, express_1.Router)();
+router.post("/login", authController_1.login);
+router.post("/store-fcm-token", authMiddleware_1.authenticateRequest, authController_1.storeFcmToken);
+router.post("/remove-fcm-token", authMiddleware_1.authenticateRequest, authController_1.removeFcmToken);
+exports.default = router;

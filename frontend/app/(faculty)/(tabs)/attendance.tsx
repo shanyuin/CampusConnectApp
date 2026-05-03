@@ -1,7 +1,7 @@
-import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
-import PreviousAttendance from '../../components/Home/PreviousAttendance';
+import { StyleSheet, View } from 'react-native';
+import PreviousAttendance from '../../../components/Home/PreviousAttendance';
 
-export default function AttendanceTab() {
+export default function FacultyAttendanceScreen() {
   return (
     <View style={styles.container}>
       <PreviousAttendance />

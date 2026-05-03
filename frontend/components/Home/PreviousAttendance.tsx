@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Refresh
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuth } from '../../context/AuthContext';
 
 type Row = {
   Date: string;
@@ -57,6 +58,7 @@ const toDayName = (dateStr?: string | null) => {
 
 
 export default function PreviousAttendance() {
+  const { apiBaseUrl } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [filterMode, setFilterMode] = useState<'date' | 'month'>('date');
@@ -75,7 +77,7 @@ export default function PreviousAttendance() {
         const token = await AsyncStorage.getItem('token');
         if (!token) return;
 
-        const res = await fetch(`https://campusconnectapp-lu1d.onrender.com/api/attendance/history`, {
+        const res = await fetch(`${apiBaseUrl}/api/attendance/history`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -112,7 +114,7 @@ export default function PreviousAttendance() {
 
   useEffect(() => {
     fetchHistory();
-  }, []);
+  }, [apiBaseUrl]);
 
   const filteredRows = useMemo(() => {
   if (filterMode === 'date') {

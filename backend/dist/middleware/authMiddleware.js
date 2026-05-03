@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.authenticateRequest = void 0;
+exports.authorizeRoles = exports.authenticateRequest = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const JWT_SECRET = (_a = process.env.JWT_SECRET) !== null && _a !== void 0 ? _a : "dev-secret-change-me";
 const authenticateRequest = (req, res, next) => {
@@ -24,3 +24,13 @@ const authenticateRequest = (req, res, next) => {
     }
 };
 exports.authenticateRequest = authenticateRequest;
+const authorizeRoles = (...allowedRoles) => (req, res, next) => {
+    var _a;
+    const role = (_a = req.authUser) === null || _a === void 0 ? void 0 : _a.role;
+    if (!role || !allowedRoles.includes(role)) {
+        res.status(403).json({ error: "You are not allowed to access this resource." });
+        return;
+    }
+    next();
+};
+exports.authorizeRoles = authorizeRoles;

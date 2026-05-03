@@ -17,9 +17,9 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const express_1 = __importDefault(require("express"));
 const supabase_1 = require("./services/supabase");
 const authMiddleware_1 = require("./middleware/authMiddleware");
-const authService_1 = require("./services/authService");
 const firebaseAdmin_1 = require("./services/firebaseAdmin");
 const notificationRoutes_1 = __importDefault(require("./routes/notificationRoutes"));
+const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 app.use((0, cors_1.default)());
@@ -27,39 +27,7 @@ app.use(express_1.default.json());
 app.get("/", (_req, res) => {
     res.send("Server is running");
 });
-app.post("/api/auth/login", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const loginResponse = yield (0, authService_1.loginWithErpCredentials)(req.body);
-        console.log("this is login response", loginResponse);
-        res.json(loginResponse);
-    }
-    catch (error) {
-        res.status(401).json({ error: error.message });
-    }
-}));
-app.post("/api/auth/store-fcm-token", authMiddleware_1.authenticateRequest, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
-    try {
-        const erpId = (_a = req.authUser) === null || _a === void 0 ? void 0 : _a.erpId;
-        const { fcmToken } = req.body;
-        console.log("this route got hit", erpId);
-        if (!fcmToken) {
-            return res.status(400).json({ error: "FCM token is required" });
-        }
-        const { error } = yield supabase_1.supabase
-            .from('fcm_tokens')
-            .upsert({ erpid: erpId, token: fcmToken }, { onConflict: 'token' });
-        if (error) {
-            console.error('Error saving token:', error);
-            return res.status(500).json({ error: 'Failed to save token' });
-        }
-        console.log("saved the token");
-        res.json({ success: true });
-    }
-    catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-}));
+app.use("/api/auth", authRoutes_1.default);
 app.post("/api/send-notification", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         console.log("🔥 RAW BODY:", req.body);
@@ -77,7 +45,7 @@ app.post("/api/send-notification", (req, res) => __awaiter(void 0, void 0, void 
         res.status(500).json({ error: error.message });
     }
 }));
-app.get("/api/attendance", authMiddleware_1.authenticateRequest, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.get("/api/attendance", authMiddleware_1.authenticateRequest, (0, authMiddleware_1.authorizeRoles)("faculty"), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
         const erpId = (_a = req.authUser) === null || _a === void 0 ? void 0 : _a.erpId;
@@ -94,14 +62,17 @@ app.get("/api/attendance", authMiddleware_1.authenticateRequest, (req, res) => _
         if (error) {
             return res.status(500).json({ error: error.message });
         }
-        const normalizedAttendance = (data !== null && data !== void 0 ? data : []).map((item) => (Object.assign(Object.assign({}, item), { effective_logout_time: item.final_logout_time !== null && item.final_logout_time !== void 0 ? item.final_logout_time : item.logout_time !== null && item.logout_time !== void 0 ? item.logout_time : null })));
+        const normalizedAttendance = (data !== null && data !== void 0 ? data : []).map((item) => {
+            var _a, _b;
+            return (Object.assign(Object.assign({}, item), { effective_logout_time: (_b = (_a = item.final_logout_time) !== null && _a !== void 0 ? _a : item.logout_time) !== null && _b !== void 0 ? _b : null }));
+        });
         res.json({ attendance: normalizedAttendance });
     }
     catch (err) {
         res.status(500).json({ error: "Server error" });
     }
 }));
-app.get("/api/attendance/history", authMiddleware_1.authenticateRequest, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.get("/api/attendance/history", authMiddleware_1.authenticateRequest, (0, authMiddleware_1.authorizeRoles)("faculty"), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
         const erpId = (_a = req.authUser) === null || _a === void 0 ? void 0 : _a.erpId;
@@ -115,14 +86,17 @@ app.get("/api/attendance/history", authMiddleware_1.authenticateRequest, (req, r
         if (error) {
             return res.status(500).json({ error: error.message });
         }
-        const normalizedAttendance = (data !== null && data !== void 0 ? data : []).map((item) => (Object.assign(Object.assign({}, item), { effective_logout_time: item.final_logout_time !== null && item.final_logout_time !== void 0 ? item.final_logout_time : item.logout_time !== null && item.logout_time !== void 0 ? item.logout_time : null })));
+        const normalizedAttendance = (data !== null && data !== void 0 ? data : []).map((item) => {
+            var _a, _b;
+            return (Object.assign(Object.assign({}, item), { effective_logout_time: (_b = (_a = item.final_logout_time) !== null && _a !== void 0 ? _a : item.logout_time) !== null && _b !== void 0 ? _b : null }));
+        });
         res.json({ attendance: normalizedAttendance });
     }
     catch (_err) {
         res.status(500).json({ error: "Server error" });
     }
 }));
-app.post("/api/attendance", authMiddleware_1.authenticateRequest, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.post("/api/attendance", authMiddleware_1.authenticateRequest, (0, authMiddleware_1.authorizeRoles)("faculty"), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
         const erpId = (_a = req.authUser) === null || _a === void 0 ? void 0 : _a.erpId;
