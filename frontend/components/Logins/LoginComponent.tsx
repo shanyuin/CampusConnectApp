@@ -31,6 +31,7 @@ const LAST_LOGIN_CREDENTIALS_KEY = 'last_login_credentials';
 const ROLE_OPTIONS: RoleOption[] = [
   { label: 'Faculty', value: 'faculty' },
   { label: 'Security Guard', value: 'guard' },
+  { label: 'Student', value: 'student'},
 ];
 
 export default function LoginComponent({ apiBaseUrl, onLoginSuccess }: LoginComponentProps) {
@@ -66,7 +67,7 @@ export default function LoginComponent({ apiBaseUrl, onLoginSuccess }: LoginComp
           if (parsedUser.erpId) {
             setErpId(parsedUser.erpId);
           }
-          if (parsedUser.role === 'faculty' || parsedUser.role === 'guard') {
+          if (parsedUser.role === 'faculty' || parsedUser.role === 'guard' || parsedUser.role === 'student') {
             setRole(parsedUser.role);
           }
         }
