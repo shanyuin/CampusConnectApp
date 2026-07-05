@@ -75,32 +75,26 @@ export default function FacultyDrawerLayout() {
           ),
         }}
       />
-<<<<<<< Updated upstream
-    </Drawer>
-=======
 
-
-      <Tabs.Screen 
-       name="student-attendance"
+       <Drawer.Screen
+        name="StudentAttendance"
         options={{
           title: 'Student Attendance',
-          tabBarLabel: ({ color }) => (
-            <Text allowFontScaling={false} numberOfLines={1} style={[styles.tabBarLabel, { color }]}>
-              Student Attendance
-            </Text>
+          drawerLabel: 'Student Attendance',
+          drawerIcon: ({ color, size }) => (
+       <Ionicons name="people-outline" color={color} size={size} />
           ),
-           tabBarIcon: ({ color }) => (
-            <MaterialIcons name="qr-code-2" color={color} size={22} />
-           ),
         }}
       />
 
+           </Drawer>
+
+     
 
         
     
 
-    </Tabs>
->>>>>>> Stashed changes
+
   );
 }
 
