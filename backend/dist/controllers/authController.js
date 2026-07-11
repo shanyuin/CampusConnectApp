@@ -47,12 +47,12 @@ const authService_1 = __importStar(require("../services/authService"));
 const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b, _c, _d;
     try {
-        console.log(req.body);
         console.log("[auth/login] request received", {
             erpId: (_a = req.body) === null || _a === void 0 ? void 0 : _a.erpId,
             role: (_b = req.body) === null || _b === void 0 ? void 0 : _b.role,
         });
         const loginResponse = yield (0, authService_1.loginWithErpCredentials)(req.body);
+        
         console.log("[auth/login] success", {
             erpId: loginResponse.user.erpId,
             role: loginResponse.role,

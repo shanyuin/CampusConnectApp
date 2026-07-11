@@ -1,12 +1,13 @@
 import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
-import { supabase } from "./services/supabase";
+import { supabase } from "./config/supabase";
 import { authenticateRequest, authorizeRoles } from "./middleware/authMiddleware";
-import { sendNotification } from "./services/firebaseAdmin";
+import { sendNotification } from "./config/firebaseAdmin";
 import notificationRoutes from "./routes/notificationRoutes";
 import authRoutes from "./routes/authRoutes";
 import gatePassRoutes from "./routes/gatePassRoutes";
+import facultyRoutes from "./routes/facultyRoutes";
 import studentAttendanceRoutes from "./routes/studentRoutes";
 
 dotenv.config();
@@ -22,6 +23,7 @@ app.get("/", (_req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/gate-passes", gatePassRoutes);
+app.use("/api/faculty", facultyRoutes);
 app.use("/api/student", studentAttendanceRoutes);
 
 app.post("/api/send-notification", async (req, res) => {
@@ -186,4 +188,8 @@ const PORT = Number(process.env.PORT) || 5000;
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
+});
+
+app.get("/hello-test", (_req, res) => {
+  res.send("HELLO");
 });

@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { supabase } from "../supabase";
+import { supabase } from "../../config/supabase";
 import { AuthUser, UserRole } from "../../types/auth";
 
 type AuthTableConfig = {

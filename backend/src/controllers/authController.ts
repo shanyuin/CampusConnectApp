@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import AuthService, { loginWithErpCredentials } from "../services/authService";
+import AuthService, { loginWithErpCredentials } from "../services/auth/authService";
 
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -65,7 +65,7 @@ export const removeFcmToken = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const { error } = await (await import("../services/supabase")).supabase
+    const { error } = await (await import("../config/supabase")).supabase
       .from("fcm_tokens")
       .delete()
       .eq("erpid", erpId);

@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { supabase } from '../services/supabase';
-import { sendNotification } from '../services/firebaseAdmin';
+import { supabase } from '../config/supabase';
+import { sendNotification } from '../config/firebaseAdmin';
 
 export const saveToken = async (req: Request, res: Response) => {
   try {

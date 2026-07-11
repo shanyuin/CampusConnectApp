@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import GatePassService from "../services/gatePassService";
+import { GatePassService } from "../services";
 
 export const createGatePass = async (req: Request, res: Response): Promise<void> => {
   try {
