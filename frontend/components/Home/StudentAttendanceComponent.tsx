@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 
 import DateTimePicker from '@react-native-community/datetimepicker';
-
+import { Platform } from 'react-native';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import {
   View,
@@ -17,10 +18,6 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 
 import { Ionicons } from '@expo/vector-icons';
-
-// ---------- Config ----------
-const CLOUD_NAME = 'dlht5kqk6';
-const UPLOAD_PRESET = 'i4wdyi9e';
 
 const YEAR_OPTIONS: string[] = [
   'First Year', 'Second Year', 'Third Year', 'Fourth Year'
@@ -65,37 +62,8 @@ const PHOTO_SECTIONS: { key: PhotoKey; label: string }[] = [
 
 ];
 
-interface CloudinaryUploadResponse {
-  secure_url: string;
-  public_id: string;
-  [key: string]: any;
-}
-
-// ---------- Cloudinary upload helper ----------
-async function uploadToCloudinary(uri: string, fileName: string): Promise<CloudinaryUploadResponse> {
-  const formData = new FormData();
-
-  formData.append('file', {
-    uri,
-    type: 'image/jpeg',
-    name: fileName,
-  } as unknown as Blob);
-
-  formData.append('upload_preset', UPLOAD_PRESET);
-
-  const response = await fetch(
-    `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
-    { method: 'POST', body: formData }
-  );
-
-  if (!response.ok) {
-    const errorBody = await response.text();
-    console.error('Cloudinary error:', errorBody);
-    throw new Error(`Upload failed with status ${response.status}: ${errorBody}`);
-  }
-
-  return response.json();
-}
+// Note: Cloudinary removed. Images (if picked) are kept as local URIs
+// and not uploaded from this component.
 
 // ---------- Types for state ----------
 type PhotoState = Record<PhotoKey, { url: string | null; uploading: boolean }>;
@@ -285,6 +253,38 @@ const onChangeEndTime = (_event: any, selectedDate?: Date) => {
   
 
   const pickAndUpload = async (key: PhotoKey, source: 'camera' | 'library') => {
+    if (Platform.OS === 'web') {
+      if (source === 'camera') {
+        Alert.alert('Not supported on web', 'Camera capture is not available in the browser.');
+        return;
+      }
+
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.multiple = false;
+
+      input.onchange = () => {
+        const file = input.files?.[0];
+        if (!file) {
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+          const uri = typeof reader.result === 'string' ? reader.result : null;
+          if (!uri) {
+            return;
+          }
+          setPhotos((prev) => ({ ...prev, [key]: { url: uri, uploading: false } }));
+        };
+        reader.readAsDataURL(file);
+      };
+
+      input.click();
+      return;
+    }
+
     let result: ImagePicker.ImagePickerResult | ImagePicker.ImagePickerSuccessResult | null = null;
 
     if (source === 'camera') {
@@ -294,7 +294,10 @@ const onChangeEndTime = (_event: any, selectedDate?: Date) => {
         return;
       }
 
-      result = await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+      result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images'],
+        quality: 0.8,
+      } as ImagePicker.ImagePickerOptions);
     } else {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) {
@@ -302,97 +305,167 @@ const onChangeEndTime = (_event: any, selectedDate?: Date) => {
         return;
       }
 
-      result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+      result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        quality: 0.8,
+      } as ImagePicker.ImagePickerOptions);
     }
 
     if (!result || (result as any).canceled || !(result as any).assets || (result as any).assets.length === 0) return;
 
     const uri = (result as any).assets[0].uri;
 
-    setPhotos((prev) => ({ ...prev, [key]: { ...prev[key], uploading: true } }));
-
-    try {
-      const data = await uploadToCloudinary(uri, `${key}.jpg`);
-      setPhotos((prev) => ({ ...prev, [key]: { url: data.secure_url, uploading: false } }));
-    } catch (err) {
-      console.error(err);
-      Alert.alert('Upload failed', err instanceof Error ? err.message : 'Please try again.');
-      setPhotos((prev) => ({ ...prev, [key]: { ...prev[key], uploading: false } }));
-    }
+    // Save local URI (no upload to Cloudinary anymore)
+    setPhotos((prev) => ({ ...prev, [key]: { url: uri, uploading: false } }));
   };
 
   const removePhoto = (key: PhotoKey) => {
     setPhotos((prev) => ({ ...prev, [key]: { url: null, uploading: false } }));
   };
 
-  const handleSubmit = () => {
-    if (!selectedYear) {
-      Alert.alert('Missing info', 'Please select a year.');
-      return;
-    }
-    if (!selectedDepartment) {
-      Alert.alert('Missing info', 'Please select a department.');
-      return;
-    }
-    if (!selectedSemester) {
-      Alert.alert('Missing info', 'Please select a semester.');
-      return;
-    }
-    if (!selectedSection) {
-      Alert.alert('Missing info', 'Please select a section.');
-      return;
-    }
+  const handleSubmit = async () => {
+    console.log('[StudentAttendance] Submit button pressed');
 
-    if(!location) {
-      Alert.alert('Missing info', 'Please enter a location.');
-      return;
-    }
-    if (!selectedSubject) {
-      Alert.alert('Missing info', 'Please select a subject.');
-      return;
-    }
+//     if (!selectedYear) {
+//       Alert.alert('Missing info', 'Please select a year.');
+//       return;
+//     }
+//     if (!selectedDepartment) {
+//       Alert.alert('Missing info', 'Please select a department.');
+//       return;
+//     }
+//     if (!selectedSemester) {
+//       Alert.alert('Missing info', 'Please select a semester.');
+//       return;
+//     }
+//     if (!selectedSection) {
+//       Alert.alert('Missing info', 'Please select a section.');
+//       return;
+//     }
 
-    if (!selectedDate) {
-  Alert.alert('Missing info', 'Please select a date.');
-  return;
-}
+//     if(!location) {
+//       Alert.alert('Missing info', 'Please enter a location.');
+//       return;
+//     }
+//     if (!selectedSubject) {
+//       Alert.alert('Missing info', 'Please select a subject.');
+//       return;
+//     }
 
-
-
-    if (!startTime || !endTime) {
-  Alert.alert('Missing info', 'Please select start and end time.');
-  return;
-}
-if (endTime <= startTime) {
-  Alert.alert('Invalid time', 'End time must be after start time.');
-  return;
-}
+//     if (!selectedDate) {
+//   Alert.alert('Missing info', 'Please select a date.');
+//   return;
+// }
 
 
-    const missing = PHOTO_SECTIONS.filter((s) => !photos[s.key].url);
-    if (missing.length > 0) {
-      Alert.alert('Missing photos', `Please upload: ${missing.map((m) => m.label).join(', ')}`);
-      return;
-    }
 
+//     if (!startTime || !endTime) {
+//   Alert.alert('Missing info', 'Please select start and end time.');
+//   return;
+// }
+// if (endTime <= startTime) {
+//   Alert.alert('Invalid time', 'End time must be after start time.');
+//   return;
+//}
     const payload = {
-      selectedYear,
-      selectedDepartment,
-      selectedSemester,
-      selectedSection,
-      selectedSubject,
-       startTime: formatTime(startTime),
-  endTime: formatTime(endTime),
-   selectedDate: selectedDate?.toISOString().split('T')[0], // "2026-07-04" format, good for storing in DB
-      photo1: photos.photo1.url,
-      photo2: photos.photo2.url,
-      photo3: photos.photo3.url,
-      photo4: photos.photo4.url,
-      photo5: photos.photo5.url,
-    };
+    // Hardcoded values for testing
+    faculty_erpid: "FAC001",
+    department_id: 1,
+    subject_id: 3,
+    division_id: "comp-2-a",
 
-    console.log('Submitting:', payload);
-    Alert.alert('Success', 'Form submitted!');
+    // Values from frontend
+    division: "A",
+
+    year:
+      selectedYear === "First Year" ? 1 :
+      selectedYear === "Second Year" ? 2 :
+      selectedYear === "Third Year" ? 3 : 4,
+
+    semester:
+      selectedSemester === "Semester 1" ? 1 :
+      selectedSemester === "Semester 2" ? 2 :
+      selectedSemester === "Semester 3" ? 3 :
+      selectedSemester === "Semester 4" ? 4 :
+      selectedSemester === "Semester 5" ? 5 :
+      selectedSemester === "Semester 6" ? 6 :
+      selectedSemester === "Semester 7" ? 7 : 8,
+
+    batch,
+    location,
+
+    session_date: selectedDate?.toISOString().split("T")[0],
+
+    start_time: startTime?.toISOString(),
+    end_time: endTime?.toISOString(),
+
+    cloudinary_prefix: "test-folder",
+  };
+    console.log('[StudentAttendance] Submitting payload:', payload);
+
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      window.alert('Submit clicked. Check the browser console for the payload.');
+    }
+
+    try {
+      const token = await AsyncStorage.getItem("token");
+
+      const formData = new FormData();
+
+      // Append all payload fields
+      Object.entries(payload).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          formData.append(key, String(value));
+        }
+      });
+
+      // Append images
+      Object.values(photos).forEach((photo, index) => {
+        if (photo.url) {
+          formData.append("images", {
+            uri: photo.url,
+            name: `photo-${index + 1}.jpg`,
+            type: "image/jpeg",
+          } as any);
+        }
+      });
+
+      for (const [key, value] of (formData as any)._parts) {
+        console.log(key, value);
+      }
+
+      const res = await fetch(
+        "http://localhost:5000/api/faculty/insert-session",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        }
+      );
+
+      const resJson = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        Alert.alert(
+          "Error",
+          resJson?.message || `Submit failed (${res.status})`
+        );
+        return;
+      }
+
+      Alert.alert(
+        "Success",
+        resJson?.message || "Form submitted successfully!"
+      );
+    } catch (err) {
+      console.log(err);
+      Alert.alert(
+        "Network Error",
+        err instanceof Error ? err.message : "Please try again."
+      );
+    }
   };
 
   return (
@@ -575,7 +648,7 @@ if (endTime <= startTime) {
   </View>
 </View>
 
-{showStartPicker && (
+{showStartPicker && Platform.OS !== 'web' && (
   <DateTimePicker
     value={startTime || new Date()}
     mode="time"
@@ -585,7 +658,7 @@ if (endTime <= startTime) {
   />
 )}
 
-{showEndPicker && (
+{showEndPicker && Platform.OS !== 'web' && (
   <DateTimePicker
     value={endTime || new Date()}
     mode="time"
@@ -608,13 +681,13 @@ if (endTime <= startTime) {
   <Text style={styles.chevron}>📅</Text>
 </TouchableOpacity>
 
-{showDatePicker && (
+{showDatePicker && Platform.OS !== 'web' && (
   <DateTimePicker
     value={selectedDate || new Date()}
     mode="date"
     display="default"
     onChange={onChangeDate}
-    minimumDate={new Date()} // disables all past dates
+    minimumDate={new Date()}
   />
 )}
 
@@ -691,9 +764,15 @@ if (endTime <= startTime) {
 
       <View style={styles.buttonGroup}>
 
-    <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-    <Text style={styles.submitButtonText}>Submit</Text>
-  </TouchableOpacity>
+    <TouchableOpacity
+      style={styles.submitButton}
+      onPress={() => {
+        console.log('[StudentAttendance] TouchableOpacity pressed');
+        void handleSubmit();
+      }}
+    >
+      <Text style={styles.submitButtonText}>Submit</Text>
+    </TouchableOpacity>
 
   <TouchableOpacity style={styles.resetButton} onPress={handleReset}>
     <Text style={styles.resetButtonText}>Reset</Text>
@@ -766,7 +845,6 @@ uploadPlaceholder: {
 previewImage: {
   width: '100%',
   height: '100%',
-  resizeMode: 'cover',
 },
 
 

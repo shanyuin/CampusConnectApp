@@ -1,4 +1,4 @@
-import { supabase } from "./supabase";
+import { supabase } from "../config/supabase";
 import { GatePassCreateRequest } from "../types/gatePass";
 
 const TABLE_NAME = "gate_pass_requests";
