@@ -49,11 +49,37 @@ export default function FacultyDrawerLayout() {
       <Drawer.Screen
         name="attendance"
         options={{
-          title: 'Attendance',
-          drawerLabel: 'Attendance',
+          title: 'Teacher Attendance',
+          drawerLabel: 'Teacher Attendance',
           drawerIcon: ({ color, size }) => (
             <MaterialIcons
               name="history"
+              color={color}
+              size={size}
+            />
+          ),
+        }}
+      />
+
+      <Drawer.Screen
+        name="StudentAttendance"
+        options={{
+          title: 'Student Attendance',
+          drawerLabel: 'Student Attendance',
+          drawerIcon: ({ color, size }) => (
+       <Ionicons name="people-outline" color={color} size={size} />
+          ),
+        }}
+      />
+
+      <Drawer.Screen
+        name="attendance-history"
+        options={{
+          title: 'Student Attendance History',
+          drawerLabel: 'Student Attendance History',
+          drawerIcon: ({ color, size }) => (
+            <MaterialIcons
+              name="fact-check"
               color={color}
               size={size}
             />
@@ -76,16 +102,7 @@ export default function FacultyDrawerLayout() {
         }}
       />
 
-       <Drawer.Screen
-        name="StudentAttendance"
-        options={{
-          title: 'Student Attendance',
-          drawerLabel: 'Student Attendance',
-          drawerIcon: ({ color, size }) => (
-       <Ionicons name="people-outline" color={color} size={size} />
-          ),
-        }}
-      />
+       
 
            </Drawer>
 
