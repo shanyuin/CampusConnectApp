@@ -71,7 +71,7 @@ class FacultyService {
     const { data, error } = await supabase
       .from("sessions")
       .update({
-        status: "PENDING",
+        status: "pending",
       })
       .eq("id", sessionID)
       .select();
