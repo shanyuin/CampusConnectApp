@@ -451,7 +451,7 @@ const onChangeEndTime = (_event: any, selectedDate?: Date) => {
         console.log(key, value);
       }
 
-      const API_BASE_URL = "192.168.231.10:5000";
+      const API_BASE_URL = "https://campusconnectapp-lu1d.onrender.com";
       // const API_BASE_URL = "localhost:5000";
 
       const res = await fetch(

@@ -69,15 +69,18 @@ useEffect(() => {
 
 const loadAttendance = async () => {
   try {
- const userJson = await AsyncStorage.getItem(USER_KEY);
+    const userJson = await AsyncStorage.getItem(USER_KEY);
+    console.log("htis is userjson",userJson);
     const user = userJson ? JSON.parse(userJson) : null;
     const teacherId = user?.erpId;
+    console.log(teacherId);
 
     if (!teacherId) {
       throw new Error("No logged-in teacher found. Please sign in again.");
     }
 
     const data = await getTeacherAttendance(teacherId);
+    console.log("this is data",data);
 
 setSessions(data);
 
