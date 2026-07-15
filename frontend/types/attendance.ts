@@ -13,3 +13,16 @@ export interface Attendance {
   detected_at: string | null;
   updated_at: string;
 }
+
+export interface AttendanceStudent {
+  id: number; // attendance_details.id
+  student_erpid: string;
+    name: string;
+  status: "Present" | "Absent";
+  students: {
+    id: number;
+    name: string;
+    erpid: string;
+    department_id: number;
+  };
+}

@@ -1,6 +1,8 @@
 import { Session } from "../types/session";
 
-const API_URL = "https://campusconnectapp-lu1d.onrender.com/api";
+const API_URL = "https://campusconnectapp-lu1d.onrender.com";
+
+// const API_URL = "http://10.109.186.90:5000/api";
 
 export async function getTeacherAttendance(
   teacherId: string
@@ -8,7 +10,7 @@ export async function getTeacherAttendance(
   // const API_URL = "https://campusconnectapp-lu1d.onrender.com"; // Replace with your actual API base URL
   try {
     const response = await fetch(
-      `${API_URL}/api/faculty/teacher/${teacherId}`
+      `${API_URL}/faculty/teacher/${teacherId}`
     );
 
     console.log("Status:", response.status);
@@ -38,3 +40,51 @@ export async function getTeacherAttendance(
     throw error;
   }
 }
+
+
+export async function getSessionAttendance(
+
+  sessionId: string
+  
+) {
+  const response = await fetch(
+    `${API_URL}/faculty/teacher/session/${sessionId}`
+  //  console.log("Status:", response.status);
+
+  
+  );
+
+  const result = await response.json();
+
+  if (!result.success) {
+    throw new Error(result.message);
+  }
+
+  return result.attendance;
+}
+
+
+export async function updateAttendance(
+  attendanceId: number,
+  status: "Present" | "Absent"
+) {
+  const response = await fetch(
+    `${API_URL}/faculty/attendance/${attendanceId}`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ status }),
+    }
+  );
+
+  const result = await response.json();
+
+  if (!result.success) {
+    throw new Error(result.message);
+  }
+
+  return result.attendance;
+}
+

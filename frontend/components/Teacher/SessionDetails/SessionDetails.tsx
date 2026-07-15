@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -10,18 +10,71 @@ import {
 } from "react-native";
 
 import StudentRow from "./StudentRow";
+import { useEffect } from "react";
+
+import { useLocalSearchParams } from "expo-router";
+
+
+import { useFocusEffect } from "@react-navigation/native";
+
+
+import { getSessionAttendance } from "../../../services/attendanceService";
+
+import { updateAttendance } from "../../../services/attendanceService";
+
+  
 
 import {
   studentData,
   Student,
 } from "./studentData";
+import { AttendanceStudent } from "@/types/attendance";
+
+import { ActivityIndicator } from "react-native";
+
+  
 
 
 
 export default function SessionDetails() {
 
   const [students, setStudents] =
-    useState<Student[]>(studentData);
+  useState<AttendanceStudent[]>([]);
+
+const [loading, setLoading] = useState(true);
+const { sessionId } = useLocalSearchParams();
+
+
+
+
+
+
+
+const loadAttendance = async () => {
+  try {
+    setLoading(true);
+
+  //  console.log("Loading attendance for sessionId:", sessionId);
+
+    const data = await getSessionAttendance(
+      sessionId as string
+    );
+
+   // console.log("this is data" ,data);
+
+    setStudents(data);
+  } catch (error) {
+    console.log(error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+useEffect(() => {
+  loadAttendance();
+}, []);
+
+
 
     const presentCount = students.filter(
   student => student.status === "Present"
@@ -36,34 +89,50 @@ const attendancePercentage =
     ? 0
     : ((presentCount / students.length) * 100).toFixed(1);
 
-  const toggleAttendance = (id: number) => {
+  const toggleAttendance = async (attendanceId: number) => {
+  const student = students.find(s => s.id === attendanceId);
 
-    /*
-    ====================================================
+  if (!student) return;
 
-    Prashant Bhaiya,
+  const newStatus =
+    student.status === "Present"
+      ? "Absent"
+      : "Present";
 
-    present absent mechanism change ka code yaha hai.
+  try {
+    await updateAttendance(attendanceId, newStatus);
 
-    Backend API call yahi lagegi.
-
-    ====================================================
-    */
+   // await loadAttendance();
 
     setStudents(prev =>
-      prev.map(student =>
-        student.id === id
+      prev.map(s =>
+        s.id === attendanceId
           ? {
-              ...student,
-              status:
-                student.status === "Present"
-                  ? "Absent"
-                  : "Present",
+              ...s,
+              status: newStatus,
             }
-          : student
+          : s
       )
     );
-  };
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+if (loading) {
+  return (
+    <View
+      style={{
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <ActivityIndicator size="large" />
+      <Text>Loading students...</Text>
+    </View>
+  );
+}
 
   return (
     <View style={styles.container}>
@@ -115,10 +184,11 @@ const attendancePercentage =
         }
         contentContainerStyle={{ paddingBottom: 24 }}
         renderItem={({ item }) => (
-          <StudentRow
-            student={item}
-            onToggle={toggleAttendance}
-          />
+       <StudentRow
+          student={item}
+      onToggle={toggleAttendance}
+ 
+/>
         )}
       />
 

@@ -86,6 +86,10 @@ useEffect(() => {
 
 const loadAttendance = async () => {
   try {
+   
+          setLoading(true);
+
+
     const userJson = await AsyncStorage.getItem(USER_KEY);
    
     const user = userJson ? JSON.parse(userJson) : null;
@@ -97,7 +101,7 @@ const loadAttendance = async () => {
     }
 
     const data = await getTeacherAttendance(teacherId);
-    console.log("this is data",data);
+ //   console.log("this is data",data);
    
 setSessions(data);
 
@@ -164,6 +168,7 @@ const filteredSessions = sessions.filter(session => {
   );
 });
 
+
 if (loading) {
   return (
     <View
@@ -173,11 +178,11 @@ if (loading) {
         alignItems: "center",
       }}
     >
-      <Text>Loading...</Text>
+      <ActivityIndicator size="large" />
+      <Text>Loading attendance...</Text>
     </View>
   );
 }
-
   return (
     <SafeAreaView style={styles.container}>
   <ScrollView
@@ -381,12 +386,15 @@ if (loading) {
     }
     onPress={() => {
       router.navigate({
-        pathname: "/(faculty)/session-details",
+        pathname : "../session-details",
+      // pathname: "/faculty/session-details",
         params: {
           sessionId: item.id.toString(),
         },
       });
     }}
+
+   
   />
 ))}
 

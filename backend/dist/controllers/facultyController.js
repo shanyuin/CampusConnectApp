@@ -20,7 +20,7 @@ var __rest = (this && this.__rest) || function (s, e) {
     return t;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getTeacherAttendance = exports.insertSession = exports.triggerFacultyNotification = exports.saveFacultyToken = exports.createFacultyGatePass = void 0;
+exports.updateAttendance = exports.getSessionAttendance = exports.getTeacherAttendance = exports.insertSession = exports.triggerFacultyNotification = exports.saveFacultyToken = exports.createFacultyGatePass = void 0;
 const services_1 = require("../services");
 const cloudinary_1 = require("../utils/cloudinary");
 // import supabase from "../config/supabase";
@@ -137,6 +137,7 @@ const insertSession = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     }
 });
 exports.insertSession = insertSession;
+//added 
 const getTeacherAttendance = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { teacherId } = req.params;
@@ -224,3 +225,79 @@ const getTeacherAttendance = (req, res) => __awaiter(void 0, void 0, void 0, fun
     }
 });
 exports.getTeacherAttendance = getTeacherAttendance;
+const getSessionAttendance = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { sessionId } = req.params;
+        const { data, error } = yield supabase_1.supabase
+            .from("attendance_details")
+            .select(`
+        id,
+        student_erpid,
+        session_id,
+        status,
+        confidence,
+        source,
+        students!attendance_details_student_erpid_fkey (
+          id,
+          name,
+          erpid,
+          department_id
+        )
+      `)
+            .eq("session_id", Number(sessionId))
+            .order("student_erpid", { ascending: true });
+        if (error) {
+            res.status(400).json({
+                success: false,
+                message: error.message,
+            });
+            return;
+        }
+        res.status(200).json({
+            success: true,
+            attendance: data,
+        });
+    }
+    catch (err) {
+        res.status(500).json({
+            success: false,
+            message: err instanceof Error
+                ? err.message
+                : "Internal Server Error",
+        });
+    }
+});
+exports.getSessionAttendance = getSessionAttendance;
+const updateAttendance = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { attendanceId } = req.params;
+        const { status } = req.body;
+        const { data, error } = yield supabase_1.supabase
+            .from("attendance_details")
+            .update({
+            status,
+            updated_at: new Date().toISOString(),
+        })
+            .eq("id", Number(attendanceId))
+            .select()
+            .single();
+        if (error) {
+            res.status(400).json({
+                success: false,
+                message: error.message,
+            });
+            return;
+        }
+        res.status(200).json({
+            success: true,
+            attendance: data,
+        });
+    }
+    catch (err) {
+        res.status(500).json({
+            success: false,
+            message: err instanceof Error ? err.message : "Server Error",
+        });
+    }
+});
+exports.updateAttendance = updateAttendance;

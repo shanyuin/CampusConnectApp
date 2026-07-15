@@ -264,3 +264,92 @@ export const getTeacherAttendance = async (
     });
   }
 };
+
+export const getSessionAttendance = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { sessionId } = req.params;
+
+    const { data, error } = await supabase
+      .from("attendance_details")
+      .select(`
+        id,
+        student_erpid,
+        session_id,
+        status,
+        confidence,
+        source,
+        students!attendance_details_student_erpid_fkey (
+          id,
+          name,
+          erpid,
+          department_id
+        )
+      `)
+      .eq("session_id", Number(sessionId))
+      .order("student_erpid", { ascending: true });
+
+    if (error) {
+      res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      attendance: data,
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message:
+        err instanceof Error
+          ? err.message
+          : "Internal Server Error",
+    });
+  }
+};
+
+
+export const updateAttendance = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { attendanceId } = req.params;
+    const { status } = req.body;
+
+    const { data, error } = await supabase
+      .from("attendance_details")
+      .update({
+        status,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", Number(attendanceId))
+      .select()
+      .single();
+
+    if (error) {
+      res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      attendance: data,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err instanceof Error ? err.message : "Server Error",
+    });
+  }
+};

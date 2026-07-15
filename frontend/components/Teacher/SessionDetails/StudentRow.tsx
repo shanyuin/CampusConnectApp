@@ -6,10 +6,10 @@ import {
   Pressable,
 } from "react-native";
 
-import { Student } from "./studentData";
+import { AttendanceStudent } from "../../../types/attendance";
 
 type Props = {
-  student: Student;
+  student: AttendanceStudent;
   onToggle: (id: number) => void;
 };
 
@@ -22,11 +22,11 @@ export default function StudentRow({
 
       <View>
         <Text style={styles.name}>
-          {student.name}
+               {student.students.name}
         </Text>
 
         <Text style={styles.erp}>
-          ERP : {student.erpId}
+             ERP : {student.student_erpid}
         </Text>
       </View>
 

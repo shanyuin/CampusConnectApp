@@ -5,9 +5,13 @@ import {
   saveFacultyToken,
   triggerFacultyNotification,
   insertSession,
-  getTeacherAttendance
+  getTeacherAttendance,
+  getSessionAttendance,
+  updateAttendance,
 } from "../controllers/facultyController";
 import upload from "../config/multerConfig";
+
+
 
 const router = Router();
 
@@ -21,5 +25,16 @@ router.get(
   "/teacher/:teacherId",
   getTeacherAttendance
 );
+
+router.get(
+  "/teacher/session/:sessionId",
+  getSessionAttendance
+);
+
+router.patch(
+  "/attendance/:attendanceId",
+  updateAttendance
+);
+
 
 export default router;

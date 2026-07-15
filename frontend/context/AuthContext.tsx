@@ -28,7 +28,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
   // const apiBaseUrl = 'http://10.250.122.90:5000';  // Replace with your actual API base URL
   //  const apiBaseUrl="https://campusconnectapp-lu1d.onrender.com"
   // const apiBaseUrl = 'http://localho?st:5000';  // Replace with your actual API base URL
+
+
   const apiBaseUrl = 'https://campusconnectapp-lu1d.onrender.com';
+
+
+// const apiBaseUrl= "http://10.109.186.90:5000";
 
   useEffect(() => {
     const bootstrap = async () => {
