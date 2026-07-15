@@ -1,6 +1,6 @@
 import { Session } from "../types/session";
 
-const API_URL = "https://campusconnectapp-lu1d.onrender.com/api";
+const API_URL = "https://campusconnectapp-lu1d.onrender.com";
 
 export async function getTeacherAttendance(
   teacherId: string
