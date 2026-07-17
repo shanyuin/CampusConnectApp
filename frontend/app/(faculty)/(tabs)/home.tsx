@@ -1,4 +1,4 @@
-import HomeComponent from '../../../components/Home/HomeComponent';
+import FacultyAttendanceHome from '../../../components/Faculty/FacultyAttendanceHome';
 import { useAuth } from '../../../context/AuthContext';
 
 export default function FacultyHomeScreen() {
@@ -9,7 +9,7 @@ export default function FacultyHomeScreen() {
   }
 
   return (
-    <HomeComponent
+    <FacultyAttendanceHome
       user={session.user}
       token={session.token}
       apiBaseUrl={apiBaseUrl}

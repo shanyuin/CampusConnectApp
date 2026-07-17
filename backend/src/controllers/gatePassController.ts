@@ -1,43 +1,9 @@
 import { Request, Response } from "express";
 import { GatePassService } from "../services";
+import { createGatePassForAuthenticatedFaculty } from "./helpers/gatePassResponse";
 
 export const createGatePass = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const teacherErpId = req.authUser?.erpId;
-    const teacherName = req.authUser?.name;
-    console.log("[gate-pass/create] request received", {
-      teacherErpId,
-      teacherName,
-      role: req.authUser?.role,
-      parent_name: req.body?.parent_name,
-      visit_date: req.body?.visit_date,
-      visit_time: req.body?.visit_time,
-    });
-
-    if (!teacherErpId || !teacherName) {
-      console.log("[gate-pass/create] missing authenticated faculty context");
-      res.status(400).json({ error: "Authenticated faculty context is missing." });
-      return;
-    }
-
-    const record = await GatePassService.createGatePass(teacherErpId, teacherName, req.body);
-    console.log("[gate-pass/create] success", {
-      id: record.id,
-      teacherErpId,
-      parent_name: record.parent_name,
-    });
-    res.status(201).json({
-      success: true,
-      gatePass: record,
-      qrPayload: JSON.stringify({ gate_pass_id: record.id }),
-    });
-  } catch (error: any) {
-    console.error("[gate-pass/create] failed", {
-      teacherErpId: req.authUser?.erpId,
-      error: error.message,
-    });
-    res.status(500).json({ error: error.message });
-  }
+  return createGatePassForAuthenticatedFaculty(req, res, "[gate-pass/create]");
 };
 
 export const listGatePasses = async (req: Request, res: Response): Promise<void> => {

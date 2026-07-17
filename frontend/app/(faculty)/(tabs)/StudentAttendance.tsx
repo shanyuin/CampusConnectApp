@@ -1,22 +1,14 @@
-// import StudentAttendance from '@/components/Home/StudentAttendance';
-// import React from 'react';
-// import { View, Text, StyleSheet } from 'react-native';
-
-    
-
-
-
-import StudentAttendanceComponent from '@/components/Home/StudentAttendanceComponent';
-import HomeComponent from '../../../components/Home/HomeComponent';
+import FacultySessionForm from '@/components/Faculty/FacultySessionForm';
 import { useAuth } from '../../../context/AuthContext';
 
 export default function StudentAttendance() {
-  const { apiBaseUrl, session } = useAuth();
+  const { session } = useAuth();
 
- 
-  return (
-    <StudentAttendanceComponent />
-  );
+  if (!session) {
+    return null;
+  }
+
+  return <FacultySessionForm token={session.token} />;
 }
 
 

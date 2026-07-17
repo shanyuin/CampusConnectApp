@@ -1,67 +1,27 @@
-import React, { useCallback, useState } from "react";
-
-import { SafeAreaView } from "react-native-safe-area-context";
-
+import React, { useEffect, useState } from "react";
 import {
+  FlatList,
   StyleSheet,
   Text,
-  FlatList,
   View,
 } from "react-native";
-
 import StudentRow from "./StudentRow";
-import { useEffect } from "react";
-
 import { useLocalSearchParams } from "expo-router";
-
-
-import { useFocusEffect } from "@react-navigation/native";
-
-
 import { getSessionAttendance } from "../../../services/attendanceService";
-
 import { updateAttendance } from "../../../services/attendanceService";
-
-  
-
-import {
-  studentData,
-  Student,
-} from "./studentData";
 import { AttendanceStudent } from "@/types/attendance";
-
 import { ActivityIndicator } from "react-native";
-
-  
-
-
 
 export default function SessionDetails() {
 
-  const [students, setStudents] =
-  useState<AttendanceStudent[]>([]);
-
+const [students, setStudents] = useState<AttendanceStudent[]>([]);
 const [loading, setLoading] = useState(true);
 const { sessionId } = useLocalSearchParams();
-
-
-
-
-
-
 
 const loadAttendance = async () => {
   try {
     setLoading(true);
-
-  //  console.log("Loading attendance for sessionId:", sessionId);
-
-    const data = await getSessionAttendance(
-      sessionId as string
-    );
-
-   // console.log("this is data" ,data);
-
+    const data = await getSessionAttendance(sessionId as string);
     setStudents(data);
   } catch (error) {
     console.log(error);
@@ -71,12 +31,10 @@ const loadAttendance = async () => {
 };
 
 useEffect(() => {
-  loadAttendance();
-}, []);
+  void loadAttendance();
+}, [sessionId]);
 
-
-
-    const presentCount = students.filter(
+const presentCount = students.filter(
   student => student.status === "Present"
 ).length;
 
@@ -101,8 +59,6 @@ const attendancePercentage =
 
   try {
     await updateAttendance(attendanceId, newStatus);
-
-   // await loadAttendance();
 
     setStudents(prev =>
       prev.map(s =>
@@ -136,13 +92,10 @@ if (loading) {
 
   return (
     <View style={styles.container}>
-
     <Text style={styles.heading}>
         Student Attendance
     </Text>
-
     <View style={styles.summaryContainer}>
-
     <View style={styles.summaryCard}>
         <Text style={styles.summaryTitle}>
             Present
@@ -184,14 +137,9 @@ if (loading) {
         }
         contentContainerStyle={{ paddingBottom: 24 }}
         renderItem={({ item }) => (
-       <StudentRow
-          student={item}
-      onToggle={toggleAttendance}
- 
-/>
+          <StudentRow student={item} onToggle={toggleAttendance} />
         )}
       />
-
     </View>
   );
 }

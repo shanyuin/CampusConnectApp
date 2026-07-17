@@ -15,6 +15,8 @@ type UserRow = Record<string, unknown> & {
   id?: string | number | null;
 };
 
+const ROLE_COLUMN = "role";
+
 const coerceStringValue = (value: unknown): string | null => {
   if (value === null || value === undefined) {
     return null;
@@ -75,14 +77,35 @@ const comparePassword = async (password: string, storedValue: string): Promise<b
   return password === storedValue;
 };
 
+const buildIdentifierCandidates = (erpId: string): string[] => {
+  const trimmed = erpId.trim();
+  const upper = trimmed.toUpperCase();
+  return [...new Set([trimmed, upper])].filter(Boolean);
+};
+
+const buildOrFilter = (idColumns: string[], candidateValues: string[]): string =>
+  idColumns
+    .flatMap((column) => candidateValues.map((value) => `${column}.eq.${value}`))
+    .join(",");
+
 export const authenticateFromTable = async (
   config: AuthTableConfig,
   erpId: string,
   password: string,
 ): Promise<AuthUser> => {
   const normalizedErpId = normalizeIdentifier(erpId);
+  const identifierCandidates = buildIdentifierCandidates(erpId);
+  let query = supabase
+    .from(config.tableName)
+    .select("*")
+    .or(buildOrFilter(config.idColumns, identifierCandidates))
+    .limit(10);
 
-  const { data, error } = await supabase.from(config.tableName).select("*").limit(1000);
+  if (config.allowedRoleValues?.length) {
+    query = query.in(ROLE_COLUMN, config.allowedRoleValues);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     throw error;
@@ -93,15 +116,7 @@ export const authenticateFromTable = async (
     if (normalizeIdentifier(rowErpId) !== normalizedErpId) {
       return false;
     }
-
-    if (!config.allowedRoleValues?.length) {
-      return true;
-    }
-
-    const rowRole = resolveFirstString(row as UserRow, ["role"]);
-    return config.allowedRoleValues.some(
-      allowedRole => normalizeIdentifier(allowedRole) === normalizeIdentifier(rowRole),
-    );
+    return true;
   }) as UserRow | undefined;
 
   if (!matchingRow) {

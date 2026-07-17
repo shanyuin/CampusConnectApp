@@ -1,48 +1,11 @@
 import { Request, Response } from "express";
 import { FacultyService } from "../services";
 import { uploadImage } from "../utils/cloudinary";
-// import supabase from "../config/supabase";
 import { supabase } from "../config/supabase";
+import { createGatePassForAuthenticatedFaculty } from "./helpers/gatePassResponse";
 
 export const createFacultyGatePass = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const teacherErpId = req.authUser?.erpId;
-    const teacherName = req.authUser?.name;
-
-    console.log("[faculty/gate-pass/create] request received", {
-      teacherErpId,
-      teacherName,
-      role: req.authUser?.role,
-      parent_name: req.body?.parent_name,
-      visit_date: req.body?.visit_date,
-      visit_time: req.body?.visit_time,
-    });
-
-    if (!teacherErpId || !teacherName) {
-      res.status(400).json({ error: "Authenticated faculty context is missing." });
-      return;
-    }
-
-    const record = await FacultyService.createGatePass(teacherErpId, teacherName, req.body);
-
-    console.log("[faculty/gate-pass/create] success", {
-      id: record.id,
-      teacherErpId,
-      parent_name: record.parent_name,
-    });
-
-    res.status(201).json({
-      success: true,
-      gatePass: record,
-      qrPayload: JSON.stringify({ gate_pass_id: record.id }),
-    });
-  } catch (error: any) {
-    console.error("[faculty/gate-pass/create] failed", {
-      teacherErpId: req.authUser?.erpId,
-      error: error.message,
-    });
-    res.status(500).json({ error: error.message });
-  }
+  return createGatePassForAuthenticatedFaculty(req, res, "[faculty/gate-pass/create]");
 };
 
 export const saveFacultyToken = async (req: Request, res: Response): Promise<void> => {
